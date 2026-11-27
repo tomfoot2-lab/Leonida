@@ -22,6 +22,7 @@ Le jeton GitHub reste sur l'appareil. Il n'est jamais envoyé ailleurs qu'à `ap
 - `t/` : morceaux de la carte (zooms 0 à 5).
 - `sw.js`, `manifest.webmanifest`, `icons/` : installation et fonctionnement hors ligne.
 - `vendor/` : [Leaflet](https://leafletjs.com) 1.9.4 (licence BSD-2, voir `vendor/LEAFLET-LICENSE.txt`).
+- Pictogrammes des catégories : [Tabler Icons](https://tabler.io/icons) (licence MIT, voir `vendor/TABLER-ICONS-LICENSE.txt`).
 
 ## Crédits
 
