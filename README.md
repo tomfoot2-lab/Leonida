@@ -3,7 +3,7 @@ Map interactive GTA VI
 
 Carte interactive de GTA 6 (Leonida) en français, installable comme une appli sur iPhone, iPad et ordinateur, avec suivi de progression.
 
-**Ouvrir la carte : https://tomfoot2-lab.github.io/leonida/**
+**Ouvrir la carte : https://tomfoot2-lab.github.io/Leonida/**
 
 ## Sauvegarde
 
