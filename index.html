@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Leonida — carte FR</title>
+<link rel="stylesheet" href="vendor/leaflet.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#060a1b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Leonida">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* VOICE: a field notebook for a 100 % run — calm, practical, a bit of Vice City at dusk.
+   IDEA: the paper checklist you keep next to the console, pinned over the night map.
+   PICTURE: the map of Leonida itself, edge to edge; everything else is a card laid on it.
+   COLOUR and TYPE: night-navy map, warm paper cards, Vice pink for actions, lagoon teal for "trouvé"; Barlow Condensed signage + Inter.
+   LAYOUT: phone — map full screen, search on top, sheets from the bottom; desktop — checklist panel left, map right. */
+:root{color-scheme:light dark;
+ --sea:#060a1b;
+ --bg:light-dark(#fbf8f3,#13151e);--bg2:light-dark(#f2ede5,#1b1e2a);--ink:light-dark(#17151f,#eef0f7);
+ --muted:light-dark(#625d6e,#9aa1b5);--line:light-dark(#e4ddd2,#2a2e3d);
+ --pink:#ff3d7f;--pinkink:light-dark(#d81b60,#ff6b9d);--teal:#0fb5a6;--tealink:light-dark(#0b7f75,#3fd9ca);
+ --amber:light-dark(#b86e00,#ffb238);--red:light-dark(#c62828,#ff6b6b);
+ --shadow:0 10px 30px rgba(3,6,20,.28),0 2px 6px rgba(3,6,20,.18)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--sea);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3,.cond{font-family:"Barlow Condensed",Inter,sans-serif;font-weight:700;line-height:1.05;margin:0}
+#map{position:fixed;inset:0;background:var(--sea);z-index:0}
+.leaflet-container{background:var(--sea);font:inherit}
+.leaflet-control-attribution{font-size:11px;background:rgba(10,14,32,.75)!important;color:#c9cfe0}
+.leaflet-control-attribution a{color:#ffd1e0}
+.zlow .town{display:none}
+.town{color:#fff;font:700 15px/1 "Barlow Condensed",sans-serif;text-shadow:0 0 3px #060a1b,0 0 6px #060a1b,0 0 10px #060a1b;white-space:nowrap;pointer-events:none;transform:translate(-50%,-50%)}
+
+/* top bar */
+.bar{position:fixed;z-index:20;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 10px) max(env(safe-area-inset-right),10px) 0 max(env(safe-area-inset-left),10px);display:grid;gap:8px;pointer-events:none}
+.bar>*{pointer-events:auto}
+.search{position:relative}
+.search input{width:100%;height:48px;border-radius:14px;border:0;background:var(--bg);color:var(--ink);padding:0 16px 0 44px;font-size:16px;box-shadow:var(--shadow);outline:none}
+.search input:focus-visible{box-shadow:var(--shadow),0 0 0 3px var(--pink)}
+.search svg{position:absolute;left:14px;top:14px;color:var(--muted)}
+.results{position:absolute;left:0;right:0;top:54px;max-height:min(60vh,460px);overflow:auto;background:var(--bg);border-radius:14px;box-shadow:var(--shadow);padding:6px}
+.results button{display:grid;grid-template-columns:12px 1fr auto;gap:10px;align-items:center;width:100%;text-align:left;border:0;background:none;padding:10px;border-radius:10px;min-height:48px}
+.results button:hover,.results button:focus-visible{background:var(--bg2);outline:none}
+.results small{display:block;color:var(--muted);font-size:13px}
+.results .none{padding:12px;color:var(--muted)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{height:40px;border:0;border-radius:999px;background:var(--bg);box-shadow:var(--shadow);padding:0 14px;display:inline-flex;align-items:center;gap:8px;font:600 15px/1 Inter,sans-serif;white-space:nowrap}
+.chip:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.chip .dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
+.chip.s-ok .dot{background:var(--teal)}.chip.s-saving .dot{background:var(--amber);animation:pulse 1s infinite}
+.chip.s-warn .dot{background:var(--amber)}.chip.s-bad .dot{background:var(--red)}
+.chip .flag{width:8px;height:8px;border-radius:50%;background:var(--pink);display:none}
+.chip.nudge .flag{display:block}
+.pbar{width:54px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--pink);width:0}
+@keyframes pulse{50%{opacity:.35}}
+@media(max-width:600px){.chip{height:38px;padding:0 12px;font-size:14px;gap:7px}.chips{gap:6px}.pbar{display:none}}
+
+/* panel */
+.panel{position:fixed;z-index:30;left:0;right:0;bottom:0;height:min(88vh,88dvh);background:var(--bg);border-radius:20px 20px 0 0;box-shadow:var(--shadow);display:flex;flex-direction:column;transform:translateY(105%);transition:transform .28s ease;padding-bottom:env(safe-area-inset-bottom)}
+.panel.open{transform:none}
+.ptabs{display:flex;gap:6px;padding:12px 12px 8px;border-bottom:1px solid var(--line);align-items:center}
+.ptabs button{height:44px;border:0;border-radius:12px;background:none;padding:0 14px;font:700 19px/1 "Barlow Condensed",sans-serif;color:var(--muted)}
+.ptabs button[aria-selected=true]{background:var(--bg2);color:var(--ink)}
+.ptabs .close{margin-left:auto;font:600 15px/1 Inter,sans-serif;color:var(--ink)}
+.pbody{overflow:auto;flex:1;padding:14px 16px 28px;overscroll-behavior:contain}
+.pbody[hidden]{display:none}
+.big{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.big b{font:700 44px/1 "Barlow Condensed",sans-serif}
+.big span{color:var(--muted)}
+.meter{height:10px;border-radius:5px;background:var(--line);overflow:hidden;margin:10px 0 14px}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),#ff8c42)}
+.opts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.tog{display:flex;align-items:center;gap:10px;min-height:44px;font-weight:500}
+.tog input{width:22px;height:22px;accent-color:var(--pink)}
+.btn,.opts button,.gh button{height:44px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:0 14px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.primary{background:var(--pink);border-color:var(--pink);color:#fff}
+.btn.danger{color:var(--red);border-color:currentColor;background:none}
+.btn:focus-visible,.opts button:focus-visible,.gh button:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+details.grp{border-top:1px solid var(--line)}
+details.grp summary{list-style:none;display:flex;align-items:center;gap:10px;min-height:52px;cursor:pointer}
+details.grp summary::-webkit-details-marker{display:none}
+details.grp summary h3{font-size:22px}
+details.grp summary .gc{color:var(--muted);font-size:14px;margin-left:auto;white-space:nowrap}
+details.grp summary::before{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .2s}
+details.grp[open] summary::before{transform:rotate(45deg)}
+.gh{display:flex;gap:6px;margin:0 0 6px}
+.gh button{height:36px;font-size:14px}
+.crow{display:grid;grid-template-columns:24px 12px 1fr auto auto;align-items:center;gap:10px;min-height:46px;padding:2px 0;position:relative}
+.crow input{width:20px;height:20px;accent-color:var(--pink)}
+.crow .sw{width:12px;height:12px;border-radius:50%;background:var(--c);box-shadow:0 0 0 2px rgba(0,0,0,.25)}
+.crow .cn{font-size:15px;line-height:1.25}
+.crow .cc{font-size:13px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.crow .cc.done{color:var(--tealink);font-weight:600}
+.crow .solo{height:32px;border:0;background:var(--bg2);border-radius:8px;padding:0 9px;font-size:13px;color:var(--muted)}
+.crow .ln{position:absolute;left:46px;right:0;bottom:0;height:2px;background:var(--line)}
+.crow .ln i{display:block;height:100%;background:var(--tealink)}
+
+/* save tab */
+.lead{color:var(--muted);margin:6px 0 14px}
+.layers{list-style:none;margin:0 0 18px;padding:0;display:grid;gap:10px}
+.layers li{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--bg)}
+.layers .lh{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.layers b{font:700 20px/1.1 "Barlow Condensed",sans-serif}
+.layers small{display:block;color:var(--muted);font-size:14px;margin-top:4px}
+.st{font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--bg2);white-space:nowrap}
+.st.ok{color:var(--tealink)}.st.warn{color:var(--amber)}.st.bad{color:var(--red)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.save h3{font-size:22px;margin:18px 0 8px}
+.remind{border-radius:14px;background:light-dark(#ffe3ec,#3a1626);color:var(--ink);padding:12px 14px;margin-bottom:14px}
+.remind[hidden]{display:none}
+textarea{width:100%;min-height:96px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:10px 12px;font-size:16px;resize:vertical}
+textarea:focus-visible{outline:3px solid var(--pink);outline-offset:1px}
+#history{list-style:none;margin:0;padding:0}
+#history li{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+#history small{display:block;color:var(--muted);font-size:13px}
+#history .empty{color:var(--muted);display:block}
+.credit{color:var(--muted);font-size:13px;margin-top:22px}
+.field{width:100%;height:48px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:0 12px;font-size:16px;margin-top:6px}
+.field:focus-visible{outline:3px solid var(--pink);outline-offset:1px}
+.steps{margin:10px 0 6px;padding-left:20px;font-size:15px}.layers .steps li{margin:4px 0;border:0;padding:0;background:none;border-radius:0}.layers .steps b{font:inherit;font-weight:700}.steps a{color:var(--pinkink);font-weight:600}
+.steps code{font-size:14px;background:var(--bg2);padding:1px 5px;border-radius:5px}
+a.btn{text-decoration:none;color:inherit}
+.muted{color:var(--muted);font-size:14px;display:block;margin-top:8px}
+.upd{position:fixed;z-index:65;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 112px);background:var(--bg);color:var(--ink);border-radius:14px;box-shadow:var(--shadow);padding:8px 8px 8px 14px;display:flex;gap:10px;align-items:center}
+.upd[hidden]{display:none}
+[hidden]{display:none!important}
+.toast{pointer-events:none}.toast button{pointer-events:auto}
+.credit a{color:var(--pinkink)}
+
+/* marker card */
+.card{position:fixed;z-index:25;left:0;right:0;bottom:0;max-height:min(58vh,58dvh);overflow:auto;background:var(--bg);border-radius:20px 20px 0 0;box-shadow:var(--shadow);padding:14px 16px calc(16px + env(safe-area-inset-bottom))}
+.card[hidden]{display:none}
+.ctop{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px;font-weight:600}
+.ctop .sw{width:12px;height:12px;border-radius:50%;flex:none}
+.ctop .x{margin-left:auto;width:44px;height:44px;border:0;border-radius:12px;background:var(--bg2);font-size:22px;line-height:1}
+.card h2{font-size:28px;margin:4px 0 2px;text-wrap:balance}
+.cplace{color:var(--muted);margin:0 0 8px;font-size:14px}
+.cdesc{margin:0 0 6px}
+.cmt{font-size:12px;color:var(--muted);margin:0 0 8px}
+.corig summary{font-size:14px;color:var(--pinkink);cursor:pointer;min-height:32px}
+.corig p{margin:4px 0 8px;color:var(--muted);font-size:14px}
+.fbtn{width:100%;height:56px;border-radius:14px;border:0;background:var(--pink);color:#fff;font:700 22px/1 "Barlow Condensed",sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0}
+.fbtn.on{background:var(--teal)}
+.fbtn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.card textarea{min-height:52px}
+.card .row a{color:var(--pinkink);display:inline-flex;align-items:center;min-height:44px;font-weight:600}
+
+/* dialog, toast, loader */
+.dialog{position:fixed;inset:0;z-index:50;background:rgba(4,6,18,.6);display:grid;place-items:center;padding:16px}
+.dialog[hidden]{display:none}
+.dbox{background:var(--bg);border-radius:18px;padding:18px;max-width:440px;width:100%;box-shadow:var(--shadow)}
+.dbox h3{font-size:26px;margin-bottom:6px}
+.dbox p{margin:0 0 14px;color:var(--muted)}
+.dact{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.toast{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom));background:#17151f;color:#fff;border-radius:14px;padding:10px 14px;display:flex;gap:12px;align-items:center;box-shadow:var(--shadow);max-width:calc(100vw - 24px)}
+.toast[hidden]{display:none}
+.toast{pointer-events:none}.toast button{pointer-events:auto;border:0;background:none;color:#ff8fb3;font-weight:700;min-height:40px}
+.loader{position:fixed;inset:0;z-index:70;background:var(--sea);color:#fff;display:grid;place-items:center;text-align:center;padding:20px}
+.loader[hidden]{display:none}
+.loader h1{font-size:44px}
+.loader p{color:#aeb6cc}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+.desk{display:none}
+@media(min-width:900px){
+ .panel{right:auto;top:0;width:380px;height:auto;border-radius:0;transform:none;transition:none;padding-top:env(safe-area-inset-top)}
+ .ptabs .close,.mob{display:none}
+ .desk{display:inline-flex}
+ #map{left:380px}
+ .bar{left:380px;grid-template-columns:minmax(0,440px) auto;align-items:start;padding-left:14px}
+ .card{left:auto;right:16px;bottom:16px;width:390px;border-radius:18px;max-height:calc(100vh - 110px)}
+}
+@media(prefers-reduced-motion:reduce){.panel{transition:none}.chip.s-saving .dot{animation:none}}
+</style>
+</head>
+<body>
+<div id="map" aria-label="Carte de Leonida"></div>
+
+<header class="bar">
+  <div class="search">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <label class="sr" for="q">Rechercher</label>
+    <input id="q" type="search" placeholder="Chercher un lieu, un objet, une carte…" autocomplete="off" enterkeyhint="search">
+    <div id="results" class="results" hidden></div>
+  </div>
+  <div class="chips">
+    <button class="chip" id="chipProg" type="button" title="Progression"><span id="chipPct">0 %</span><span class="pbar"><i id="chipBar"></i></span></button>
+    <button class="chip" id="chipSave" type="button"><span class="dot"></span><span id="chipSaveTxt">Connexion…</span><span class="flag"></span></button>
+    <button class="chip mob" id="chipCats" type="button">Catégories</button>
+  </div>
+</header>
+
+<aside class="panel" id="panel" aria-label="Catégories et sauvegarde">
+  <div class="ptabs" role="tablist">
+    <button role="tab" id="tabF" aria-selected="true" aria-controls="paneF" type="button">Catégories</button>
+    <button role="tab" id="tabS" aria-selected="false" aria-controls="paneS" type="button">Sauvegarde</button>
+    <button class="close" id="panelClose" type="button">Fermer</button>
+  </div>
+  <div class="pbody" id="paneF" role="tabpanel">
+    <div class="big"><b id="gCount">0</b><span id="gTotal">sur 0 trouvés</span></div>
+    <div class="meter"><i id="gBar"></i></div>
+    <label class="tog"><input type="checkbox" id="hideFound"> Masquer ce que j'ai déjà trouvé</label>
+    <div class="opts">
+      <button type="button" data-preset="collect">Tout sauf les lieux</button>
+      <button type="button" data-preset="all">Tout afficher</button>
+      <button type="button" data-preset="none">Tout masquer</button>
+    </div>
+    <div id="groups"></div>
+  </div>
+  <div class="pbody save" id="paneS" role="tabpanel" hidden>
+    <h2 style="font-size:30px">Ta sauvegarde</h2>
+    <p class="lead">Chaque coche est enregistrée à trois endroits. Si l'un disparaît, les deux autres restent.</p>
+    <div class="remind" id="remind" hidden></div>
+    <ol class="layers">
+      <li><div class="lh"><b>1. Ton compte GitHub</b><span class="st" id="stCloud">…</span></div>
+        <small>Un Gist secret sur ton compte, mis à jour à chaque coche : synchro entre ton téléphone et ton PC, et une copie par jour gardée 30 jours.</small>
+        <div id="ghSetup" hidden>
+          <ol class="steps">
+            <li>Ouvre <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Carte%20Leonida" target="_blank" rel="noopener">cette page GitHub ↗</a> en étant connecté.</li>
+            <li>Laisse seulement <b>gist</b> coché, choisis <b>No expiration</b>, puis <b>Generate token</b>.</li>
+            <li>Copie le jeton (il commence par <code>ghp_</code>) et colle-le ici.</li>
+          </ol>
+          <label class="sr" for="ghToken">Jeton GitHub</label>
+          <input id="ghToken" class="field" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ghp_…">
+          <div class="row"><button class="btn primary" id="ghConnect" type="button">Activer la synchro</button></div>
+          <small>Le jeton reste sur cet appareil et ne donne accès qu'à tes gists. À faire une fois sur chaque appareil.</small>
+        </div>
+        <div id="ghOn" hidden class="row"><button class="btn" id="ghSync" type="button">Synchroniser maintenant</button><a class="btn" id="ghLink" href="https://gist.github.com/" target="_blank" rel="noopener">Voir sur GitHub ↗</a><button class="btn danger" id="ghOff" type="button">Déconnecter</button></div>
+      </li>
+      <li><div class="lh"><b>2. Cet appareil</b><span class="st" id="stLocal">…</span></div>
+        <small>Copie de secours dans ce navigateur : tes coches restent même sans réseau, puis partent en ligne au retour du réseau.</small></li>
+      <li><div class="lh"><b>3. Un fichier chez toi</b><span class="st" id="stFile">…</span></div>
+        <small>Ta copie à toi, indépendante de tout compte. Range-la dans Fichiers ▸ iCloud Drive (ou Google Drive). À refaire de temps en temps.</small>
+        <div class="row"><button class="btn primary" id="btnExport" type="button">Télécharger le fichier</button><button class="btn" id="btnCopy" type="button">Copier le code</button></div>
+        <div id="codeBox" hidden style="margin-top:10px"><textarea id="codeText" readonly aria-label="Code de sauvegarde"></textarea><small style="color:var(--muted)">Sélectionne tout et colle-le dans une note.</small></div>
+      </li>
+    </ol>
+    <h3>Restaurer une sauvegarde</h3>
+    <div class="row">
+      <label class="btn" for="fileIn">Importer un fichier</label><input type="file" id="fileIn" accept=".json,application/json,text/plain" class="sr">
+      <button class="btn" id="btnPaste" type="button">Coller un code</button>
+    </div>
+    <div id="pasteBox" hidden style="margin-top:10px"><textarea id="pasteText" placeholder="Colle ici ton code LEONIDA1:…" aria-label="Code à importer"></textarea><div class="row"><button class="btn primary" id="btnPasteGo" type="button">Vérifier le code</button></div></div>
+    <h3>Copies automatiques</h3>
+    <ul id="history"><li><span class="empty">Chargement…</span></li></ul>
+    <h3>Appli et hors ligne</h3>
+    <p class="lead" id="installHint" style="margin-top:0"></p>
+    <div class="row" style="margin-top:0"><button class="btn primary" id="btnInstall" type="button" hidden>Installer l'appli</button><button class="btn" id="btnOffline" type="button">Télécharger toute la carte</button></div>
+    <small class="muted" id="offlineSt"></small>
+    <h3>Repartir de zéro</h3>
+    <p class="lead" style="margin-top:0">Une copie de ta progression est faite juste avant, tu pourras revenir en arrière.</p>
+    <button class="btn danger" id="btnReset" type="button">Tout décocher…</button>
+    <p class="credit">Carte et données : <a href="https://github.com/fbritoferreira/gta6" target="_blank" rel="noopener">Open GTA 6 Map</a> (fbritoferreira), licence <a href="https://creativecommons.org/licenses/by/4.0/deed.fr" target="_blank" rel="noopener">CC BY 4.0</a>. Catégories et noms adaptés en français, descriptions traduites automatiquement. Données du <span id="built"></span>. Projet de fan non officiel, sans lien avec Rockstar Games. Carte affichée avec <a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>.</p>
+  </div>
+</aside>
+
+<article class="card" id="card" hidden aria-live="polite">
+  <div class="ctop"><span class="sw" id="cSw"></span><span id="cCat"></span><button class="x" id="cClose" type="button" aria-label="Fermer">×</button></div>
+  <h2 id="cName"></h2>
+  <p class="cplace" id="cPlace"></p>
+  <p class="cdesc" id="cDesc"></p>
+  <p class="cmt" id="cMt">Description traduite automatiquement.</p>
+  <details class="corig" id="cOrigBox"><summary>Texte original (anglais)</summary><p id="cOrig"></p></details>
+  <button class="fbtn" id="cFound" type="button">Marquer comme trouvé</button>
+  <label class="sr" for="cNote">Note</label>
+  <textarea id="cNote" placeholder="Ta note (ex. revenir de nuit, il faut un bateau…)"></textarea>
+  <div class="row"><button class="btn" id="cNext" type="button">Suivant non trouvé à côté</button><a id="cLink" href="#" target="_blank" rel="noopener">Photo et fiche d'origine ↗</a></div>
+</article>
+
+<div class="dialog" id="dialog" hidden role="dialog" aria-modal="true" aria-labelledby="dTitle"><div class="dbox"><h3 id="dTitle"></h3><p id="dText"></p><div class="dact" id="dAct"></div></div></div>
+<div class="toast" id="toast" hidden role="status"><span id="toastTxt"></span><button id="toastBtn" type="button" hidden></button></div>
+<div class="upd" id="upd" hidden role="status"><span>Nouvelle version disponible</span><button class="btn primary" id="updGo" type="button">Recharger</button></div>
+<div class="loader" id="loader"><div><h1>Leonida</h1><p id="loaderTxt">Chargement de la carte…</p></div></div>
+
+<script src="vendor/leaflet.js"></script>
+<script>
+{
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const fmt = n => n.toLocaleString('fr-FR');
+const LS = 'leonida-fr:v1', LS_UI = 'leonida-fr:ui', LS_UNDO = 'leonida-fr:undo';
+const lsGet = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+const DAY = 864e5;
+const dayId = (t = Date.now()) => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const when = t => { if (!t) return 'jamais'; const d = Date.now() - t; if (d < 6e4) return "à l'instant"; if (d < 36e5) return 'il y a ' + Math.round(d / 6e4) + ' min'; if (d < DAY && new Date(t).getDate() === new Date().getDate()) return "aujourd'hui à " + new Date(t).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'}); const n = Math.floor(d / DAY); return n <= 1 ? 'hier' : 'il y a ' + n + ' jours'; };
+const dateFr = t => new Date(t).toLocaleString('fr-FR', {weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'});
+
+/* ---------- state ---------- */
+let cats = [], groups = [], locs = [], idIndex = new Map();
+const state = { found: new Set(), notes: {}, at: 0, ex: 0 };
+let pending = [], seq = 0, localOk = false;
+
+function encodeFound(set) {
+  const g = {};
+  for (const id of set) { const m = /^(.*)-(\d+)$/.exec(id); if (m) (g[m[1]] = g[m[1]] || []).push(m[2]); }
+  return Object.keys(g).sort().map(p => p + ':' + g[p].sort().join(',')).join(';');
+}
+function decodeFound(s) {
+  const out = new Set();
+  if (typeof s !== 'string') return out;
+  for (const part of s.split(';')) {
+    const i = part.indexOf(':'); if (i < 1) continue;
+    const p = part.slice(0, i);
+    for (const n of part.slice(i + 1).split(',')) if (/^\d+$/.test(n)) out.add(p + '-' + n);
+  }
+  return out;
+}
+function cleanNotes(n) {
+  const o = {};
+  if (n && typeof n === 'object') for (const k of Object.keys(n)) if (typeof n[k] === 'string' && n[k].trim()) o[k] = n[k].slice(0, 500);
+  return o;
+}
+function body(extra) { return Object.assign({ v: 1, f: encodeFound(state.found), n: Object.assign({}, state.notes), c: state.found.size, at: state.at, ex: state.ex || 0 }, extra || {}); }
+function applyBody(b) { state.found = decodeFound(b.f); state.notes = cleanNotes(b.n); state.at = +b.at || 0; state.ex = Math.max(state.ex || 0, +b.ex || 0); }
+function applyOp(o) {
+  if ('set' in o) { state.found = decodeFound(o.set); state.notes = cleanNotes(o.notes); }
+  else if ('on' in o) { if (o.on) state.found.add(o.id); else state.found.delete(o.id); }
+  else if ('note' in o) { if (o.note) state.notes[o.id] = o.note; else delete state.notes[o.id]; }
+  if (o.ex) state.ex = Math.max(state.ex || 0, o.ex);
+}
+function saveLocal() { localOk = lsSet(LS, Object.assign(body(), { pending })); }
+function loadLocal() {
+  const b = lsGet(LS);
+  if (b && b.v === 1) { applyBody(b); pending = Array.isArray(b.pending) ? b.pending.filter(o => o && typeof o === 'object') : []; seq = pending.reduce((m, o) => Math.max(m, +o.seq || 0), 0); }
+  localOk = lsSet(LS + ':probe', 1);
+}
+function change(op, ids) {
+  op.seq = ++seq; if (cfg.main) pending.push(op); applyOp(op);
+  state.at = Date.now();
+  saveLocal();
+  if (ids) ids.forEach(styleOne); else { styleAll(); }
+  refreshLayer(); renderCounts(); renderSave(); scheduleCloud();
+}
+const setFound = (id, on) => { if (on !== state.found.has(id)) change({ id, on }, [id]); };
+
+/* ---------- cloud (GitHub Gist) ---------- */
+const LS_CFG = 'leonida-fr:gh';
+const MAIN_FILE = 'leonida-sauvegarde.json', MAIN_DESC = 'Leonida (carte GTA 6) — sauvegarde', COPY_DESC = 'Leonida (carte GTA 6) — copies';
+let cfg = lsGet(LS_CFG) || {};
+if (!cfg || typeof cfg !== 'object') cfg = {};
+let cloud = cfg.main ? 'init' : 'off', cloudAt = 0, lastBody = null, saving = false, again = false, tmr = null, retry = null;
+let snapDay = '', snapAt = 0, pruned = false, histRows = [], lastExplicit = 0;
+async function gh(path, opts) {
+  opts = opts || {};
+  const headers = { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + cfg.token, 'X-GitHub-Api-Version': '2022-11-28' };
+  if (opts.body) headers['Content-Type'] = 'application/json';
+  const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 20000);
+  let r;
+  try { r = await fetch('https://api.github.com' + path, { method: opts.method || 'GET', body: opts.body, headers, cache: 'no-store', signal: ctl.signal }); }
+  catch (e) { throw { code: 'network' }; }
+  finally { clearTimeout(to); }
+  if (r.status === 401) throw { code: 'auth' };
+  if (r.status === 403 || r.status === 429) throw { code: r.headers.get('x-ratelimit-remaining') === '0' || r.status === 429 ? 'rate' : 'auth' };
+  if (r.status === 404) throw { code: 'notfound' };
+  if (!r.ok) throw { code: 'http', status: r.status };
+  return r.status === 204 ? null : r.json();
+}
+async function fileText(f) { if (!f) return null; if (!f.truncated) return f.content; const r = await fetch(f.raw_url, { cache: 'no-store' }); return r.text(); }
+async function readMain() {
+  const g = await gh('/gists/' + cfg.main);
+  const t = await fileText(g.files && g.files[MAIN_FILE]);
+  if (!t) return null;
+  try { const b = JSON.parse(t); return b && typeof b === 'object' ? b : null; } catch (e) { return null; }
+}
+function cloudErr(e) {
+  const c = e && e.code;
+  cloud = c === 'network' || !navigator.onLine ? 'offline' : c === 'auth' ? 'auth' : c === 'rate' ? 'offline' : 'error';
+}
+function refreshAll() { saveLocal(); if (map) { styleAll(); refreshLayer(); } renderCounts(); if (cur >= 0) fillCard(cur); renderSave(); }
+function takeRemote(b) {
+  if (!b || !(+b.at > cloudAt)) return false;
+  applyBody(b); cloudAt = +b.at; lastBody = b;
+  for (const o of pending) applyOp(o);
+  return true;
+}
+async function pull() {
+  if (!cfg.main || saving) return;
+  try {
+    const b = await readMain();
+    if (takeRemote(b)) { refreshAll(); }
+    cloud = 'ok';
+    if (pending.length) scheduleCloud(400);
+  } catch (e) {
+    if (e && e.code === 'notfound') { scheduleCloud(0); return; }
+    cloudErr(e);
+  }
+  renderSave();
+}
+function scheduleCloud(ms) { if (!cfg.main) return; clearTimeout(tmr); tmr = setTimeout(pushCloud, ms == null ? 1500 : ms); }
+async function createMain(b) {
+  const g = await gh('/gists', { method: 'POST', body: JSON.stringify({ description: MAIN_DESC, public: false, files: { [MAIN_FILE]: { content: JSON.stringify(b) } } }) });
+  cfg.main = g.id; lsSet(LS_CFG, cfg);
+}
+async function pushCloud() {
+  if (!cfg.main) return;
+  if (saving) { again = true; return; }
+  saving = true; clearTimeout(retry);
+  cloud = 'saving'; renderSave();
+  try {
+    let missing = false;
+    try { if (takeRemote(await readMain())) refreshAll(); } catch (e) { if (e && e.code === 'notfound') missing = true; else throw e; }
+    const upto = seq;
+    const b = body(); b.at = Math.max(Date.now(), cloudAt + 1);
+    if (lastBody && (+lastBody.c || 0) >= 20 && b.c < (+lastBody.c) * 0.8 && Date.now() - lastExplicit > 120000) await snapshot('securite', lastBody);
+    if (missing) await createMain(b);
+    else await gh('/gists/' + cfg.main, { method: 'PATCH', body: JSON.stringify({ files: { [MAIN_FILE]: { content: JSON.stringify(b) } } }) });
+    cloudAt = b.at; lastBody = b; pending = pending.filter(o => o.seq > upto); cloud = 'ok'; saveLocal();
+    daily(b);
+  } catch (e) {
+    cloudErr(e);
+    if (cloud !== 'auth') retry = setTimeout(pushCloud, 20000);
+  } finally {
+    saving = false; renderSave();
+    if (again) { again = false; scheduleCloud(500); }
+  }
+}
+async function copiesId() {
+  if (cfg.copies) return cfg.copies;
+  const list = await gh('/gists?per_page=100');
+  const found = list.find(g => g.description === COPY_DESC);
+  if (found) cfg.copies = found.id;
+  else { const g = await gh('/gists', { method: 'POST', body: JSON.stringify({ description: COPY_DESC, public: false, files: { 'lisez-moi.txt': { content: 'Copies automatiques de la carte Leonida (une par jour, gardées 30 jours). Ne pas supprimer.' } } }) }); cfg.copies = g.id; }
+  lsSet(LS_CFG, cfg); return cfg.copies;
+}
+async function writeCopy(name, b) { const id = await copiesId(); await gh('/gists/' + id, { method: 'PATCH', body: JSON.stringify({ files: { [name]: { content: JSON.stringify(b) } } }) }); }
+async function daily(b) {
+  const d = dayId();
+  if (d === snapDay && Date.now() - snapAt < 15 * 6e4) return;
+  snapDay = d; snapAt = Date.now();
+  try { await writeCopy('copie-' + d + '.json', Object.assign({}, b, { r: 'auto', sat: Date.now() })); prune(); } catch (e) { snapAt = 0; }
+}
+async function snapshot(reason, b) {
+  const src = b || body();
+  if (!b) lastExplicit = Date.now();
+  const t = new Date();
+  const stamp = dayId() + '-' + String(t.getHours()).padStart(2, '0') + String(t.getMinutes()).padStart(2, '0') + String(t.getSeconds()).padStart(2, '0');
+  const copy = Object.assign({}, src, { r: reason, at: +src.at || Date.now(), sat: Date.now() });
+  const u = lsGet(LS_UNDO) || []; u.unshift(copy); lsSet(LS_UNDO, u.slice(0, 5));
+  if (cfg.main) { try { await writeCopy(reason + '-' + stamp + '.json', copy); } catch (e) {} }
+}
+async function copiesList() {
+  if (!cfg.copies) return [];
+  const g = await gh('/gists/' + cfg.copies);
+  const rows = [];
+  for (const [name, f] of Object.entries(g.files || {})) {
+    if (!name.endsWith('.json')) continue;
+    try { const b = JSON.parse(await fileText(f)); if (b && typeof b === 'object') rows.push({ src: 'cloud', id: name, b }); } catch (e) {}
+  }
+  return rows.sort((a, b) => (+b.b.sat || 0) - (+a.b.sat || 0));
+}
+async function prune() {
+  if (pruned || !cfg.copies) return; pruned = true;
+  try {
+    const rows = await copiesList();
+    const old = rows.filter((r, i) => i >= 5 && (i >= 40 || Date.now() - (+r.b.sat || 0) > 35 * DAY));
+    if (old.length) { const files = {}; old.slice(0, 50).forEach(r => { files[r.id] = null; }); await gh('/gists/' + cfg.copies, { method: 'PATCH', body: JSON.stringify({ files }) }); }
+  } catch (e) {}
+}
+async function loadHistory() {
+  let rows = [];
+  if (cfg.main) { try { rows = await copiesList(); } catch (e) {} }
+  const seen = new Set(rows.map(r => +r.b.sat));
+  (lsGet(LS_UNDO) || []).forEach((b, i) => { if (!seen.has(+b.sat)) rows.push({ src: 'local', id: 'l' + i, b }); });
+  histRows = rows.slice(0, 45); renderHistory();
+}
+async function connect(tok) {
+  cfg = { token: tok }; cloud = 'init'; renderSave();
+  try {
+    const list = await gh('/gists?per_page=100');
+    const main = list.find(g => g.description === MAIN_DESC && g.files && g.files[MAIN_FILE]);
+    const copies = list.find(g => g.description === COPY_DESC);
+    cfg.copies = copies ? copies.id : null;
+    cloudAt = 0; lastBody = null; pending = [];
+    if (main) {
+      cfg.main = main.id;
+      const rb = await readMain();
+      const localHas = state.found.size > 0 || Object.keys(state.notes).length > 0;
+      if (rb && localHas && rb.f !== encodeFound(state.found)) {
+        const rc = decodeFound(rb.f).size;
+        const r = await ask('Une sauvegarde existe déjà', 'Ton compte GitHub contient ' + fmt(rc) + ' éléments trouvés, cet appareil ' + fmt(state.found.size) + '. « Fusionner » garde tout ce qui est coché des deux côtés.', [['Garder celle du compte', 'remote'], ["Garder celle de l'appareil", 'local'], ['Fusionner', 'merge', 'primary']]);
+        cloudAt = +rb.at || 1; lastBody = rb;
+        const choice = r || 'merge';
+        if (choice === 'local' || choice === 'merge') {
+          await snapshot('connexion', rb);
+          const next = choice === 'merge' ? new Set([...decodeFound(rb.f), ...state.found]) : new Set(state.found);
+          const notes = choice === 'merge' ? Object.assign({}, cleanNotes(rb.n), state.notes) : Object.assign({}, state.notes);
+          const op = { seq: ++seq, set: encodeFound(next), notes }; pending = [op]; applyOp(op);
+        } else { await snapshot('appareil'); applyBody(rb); }
+      } else if (rb) { applyBody(rb); cloudAt = +rb.at || 1; lastBody = rb; }
+      else { pending = [{ seq: ++seq, set: encodeFound(state.found), notes: Object.assign({}, state.notes) }]; }
+    } else {
+      const b = body(); b.at = Date.now();
+      await createMain(b); cloudAt = b.at; lastBody = b;
+    }
+    lsSet(LS_CFG, cfg); cloud = 'ok'; $('#ghToken').value = '';
+    refreshAll();
+    if (pending.length) scheduleCloud(0); else if (lastBody) daily(lastBody);
+    toast('Synchro GitHub activée.'); loadHistory();
+  } catch (e) {
+    const auth = e && e.code === 'auth';
+    cfg = {}; lsSet(LS_CFG, cfg); cloud = 'off'; renderSave();
+    await ask(auth ? 'Jeton refusé' : 'GitHub injoignable', auth ? "GitHub n'accepte pas ce jeton. Vérifie que tu l'as copié en entier et que la case « gist » était cochée." : 'Vérifie ta connexion puis réessaie.', [['OK', '', 'primary']]);
+  }
+}
+$('#ghConnect').onclick = () => {
+  const tok = $('#ghToken').value.trim();
+  if (!/^(ghp_|github_pat_|gho_)[A-Za-z0-9_]{20,}$/.test(tok)) { toast('Ce texte ne ressemble pas à un jeton GitHub (ghp_…).'); return; }
+  connect(tok);
+};
+$('#ghSync').onclick = () => { if (pending.length) pushCloud(); else pull().then(() => toast(cloud === 'ok' ? 'À jour.' : 'Synchro impossible pour le moment.')); };
+$('#ghOff').onclick = async () => {
+  const r = await ask('Déconnecter cet appareil ?', "Tes coches restent sur cet appareil et sur GitHub, mais cet appareil ne se synchronisera plus. Tu pourras le reconnecter avec un jeton.", [['Annuler', ''], ['Déconnecter', 'go', 'danger']]);
+  if (r !== 'go') return;
+  if (pending.length) { try { await pushCloud(); } catch (e) {} }
+  cfg = {}; lsSet(LS_CFG, cfg); cloud = 'off'; pending = []; saveLocal(); renderSave(); loadHistory();
+};
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') { saveLocal(); if (pending.length && cfg.main) { clearTimeout(tmr); pushCloud(); } }
+  else if (cfg.main) pull();
+});
+window.addEventListener('online', () => { if (!cfg.main) return; if (pending.length) scheduleCloud(0); else pull(); });
+setInterval(() => { if (document.visibilityState === 'visible' && cfg.main && !saving) { if (pending.length) scheduleCloud(0); else pull(); } }, 60000);
+
+/* ---------- map ---------- */
+let map, renderer, markers = [], onMap, layer, ring, radiusNow = 0, cur = -1;
+let enabled = new Set(), hideFound = false;
+const R = z => z < 1 ? 2.5 : z < 2 ? 3.5 : z < 3 ? 5 : z < 4 ? 6.5 : 8;
+let HAVE_LIST = [];
+function visible(i) { const r = locs[i]; return enabled.has(r[1]) && !(hideFound && state.found.has(r[0])); }
+function styleOne(id) { const i = idIndex.get(id); if (i != null) markers[i].setStyle(styleFor(i)); }
+function styleFor(i) {
+  return state.found.has(locs[i][0])
+    ? { fillColor: '#525a73', fillOpacity: .8, color: '#a7afc6', weight: 1 }
+    : { fillColor: cats[locs[i][1]].c, fillOpacity: .95, color: '#060a1b', weight: 1.5 };
+}
+function styleAll() { for (let i = 0; i < markers.length; i++) markers[i].setStyle(styleFor(i)); }
+function refreshLayer() {
+  for (let i = 0; i < markers.length; i++) {
+    const v = visible(i);
+    if (v && !onMap[i]) { layer.addLayer(markers[i]); onMap[i] = 1; }
+    else if (!v && onMap[i]) { layer.removeLayer(markers[i]); onMap[i] = 0; }
+  }
+}
+function initMap(towns) {
+  const bounds = L.latLngBounds([-800, 160], [-160, 832]);
+  map = L.map('map', { crs: L.CRS.Simple, minZoom: -1, maxZoom: 7, zoomSnap: 0.5, zoomControl: false, maxBounds: bounds.pad(0.35), preferCanvas: true, attributionControl: true });
+  map.attributionControl.setPrefix(false);
+  if (matchMedia('(min-width:900px)').matches) L.control.zoom({ position: 'bottomleft', zoomInTitle: 'Zoomer', zoomOutTitle: 'Dézoomer' }).addTo(map);
+  const HAVE = new Set('0/0_0 0/0_1 0/1_0 0/1_1 1/0_1 1/0_2 1/1_0 1/1_1 1/1_2 1/2_1 1/2_2 2/1_2 2/1_3 2/1_4 2/1_5 2/2_1 2/2_2 2/2_3 2/2_4 2/2_5 2/3_1 2/3_2 2/3_3 2/3_4 2/3_5 2/4_2 2/4_3 2/4_4 3/12_9 3/3_10 3/3_11 3/3_5 3/3_6 3/3_7 3/3_8 3/4_10 3/4_11 3/4_4 3/4_5 3/4_6 3/4_7 3/4_8 3/4_9 3/5_10 3/5_11 3/5_3 3/5_4 3/5_5 3/5_6 3/5_7 3/5_8 3/5_9 3/6_10 3/6_11 3/6_3 3/6_4 3/6_5 3/6_6 3/6_7 3/6_8 3/6_9 3/7_10 3/7_11 3/7_3 3/7_4 3/7_5 3/7_6 3/7_7 3/7_8 3/7_9 3/8_4 3/8_5 3/8_6 3/8_7 3/8_8 3/8_9 3/9_6 3/9_7 3/9_8 4/10_10 4/10_11 4/10_12 4/10_13 4/10_14 4/10_15 4/10_16 4/10_17 4/10_18 4/10_19 4/10_20 4/10_21 4/10_22 4/10_23 4/10_7 4/10_8 4/10_9 4/11_10 4/11_11 4/11_12 4/11_13 4/11_14 4/11_15 4/11_16 4/11_17 4/11_18 4/11_19 4/11_20 4/11_21 4/11_22 4/11_23 4/11_6 4/11_7 4/11_8 4/11_9 4/12_10 4/12_11 4/12_12 4/12_13 4/12_14 4/12_15 4/12_16 4/12_17 4/12_18 4/12_19 4/12_20 4/12_21 4/12_22 4/12_23 4/12_6 4/12_7 4/12_8 4/12_9 4/13_10 4/13_11 4/13_12 4/13_13 4/13_14 4/13_15 4/13_16 4/13_17 4/13_18 4/13_19 4/13_20 4/13_21 4/13_22 4/13_23 4/13_6 4/13_7 4/13_8 4/13_9 4/14_10 4/14_11 4/14_12 4/14_13 4/14_14 4/14_15 4/14_16 4/14_17 4/14_18 4/14_19 4/14_20 4/14_21 4/14_22 4/14_6 4/14_7 4/14_8 4/14_9 4/15_10 4/15_11 4/15_12 4/15_13 4/15_14 4/15_15 4/15_16 4/15_17 4/15_18 4/15_19 4/15_20 4/15_23 4/15_7 4/15_8 4/15_9 4/16_10 4/16_11 4/16_12 4/16_13 4/16_14 4/16_15 4/16_16 4/16_17 4/16_18 4/16_20 4/16_9 4/17_12 4/17_13 4/17_14 4/17_15 4/17_16 4/17_17 4/18_13 4/18_14 4/18_15 4/18_16 4/18_17 4/20_20 4/20_7 4/21_20 4/21_24 4/22_17 4/23_6 4/24_17 4/24_18 4/24_23 4/24_5 4/5_18 4/5_21 4/5_22 4/6_10 4/6_11 4/6_12 4/6_13 4/6_14 4/6_5 4/7_10 4/7_11 4/7_12 4/7_13 4/7_14 4/7_15 4/7_16 4/7_21 4/7_22 4/8_10 4/8_11 4/8_12 4/8_13 4/8_14 4/8_15 4/8_16 4/8_19 4/8_20 4/8_21 4/8_22 4/8_23 4/9_10 4/9_11 4/9_12 4/9_13 4/9_14 4/9_15 4/9_16 4/9_17 4/9_18 4/9_19 4/9_20 4/9_21 4/9_22 4/9_23 4/9_8 4/9_9 5/12_26 5/12_27 5/13_23 5/13_24 5/13_25 5/13_26 5/13_27 5/13_28 5/14_22 5/14_23 5/14_24 5/14_25 5/14_26 5/14_27 5/14_28 5/14_29 5/14_30 5/14_31 5/14_32 5/14_33 5/14_43 5/14_44 5/15_20 5/15_21 5/15_22 5/15_23 5/15_24 5/15_25 5/15_26 5/15_27 5/15_28 5/15_29 5/15_30 5/15_31 5/15_32 5/15_33 5/15_42 5/15_43 5/15_44 5/15_45 5/16_20 5/16_21 5/16_22 5/16_23 5/16_24 5/16_25 5/16_26 5/16_27 5/16_28 5/16_30 5/16_31 5/16_32 5/16_33 5/16_42 5/16_43 5/16_44 5/16_45 5/16_46 5/17_20 5/17_21 5/17_22 5/17_23 5/17_24 5/17_25 5/17_26 5/17_27 5/17_28 5/17_29 5/17_30 5/17_31 5/17_32 5/17_33 5/17_39 5/17_40 5/17_42 5/17_43 5/17_44 5/17_45 5/17_46 5/18_18 5/18_19 5/18_20 5/18_21 5/18_22 5/18_23 5/18_24 5/18_25 5/18_26 5/18_27 5/18_28 5/18_29 5/18_30 5/18_31 5/18_32 5/18_33 5/18_34 5/18_35 5/18_36 5/18_37 5/18_39 5/18_42 5/18_43 5/18_44 5/18_45 5/18_46 5/19_16 5/19_17 5/19_18 5/19_19 5/19_20 5/19_21 5/19_22 5/19_23 5/19_24 5/19_25 5/19_26 5/19_27 5/19_28 5/19_29 5/19_30 5/19_31 5/19_32 5/19_33 5/19_34 5/19_35 5/19_36 5/19_37 5/19_40 5/19_41 5/19_42 5/19_43 5/19_44 5/19_45 5/19_46 5/20_15 5/20_16 5/20_17 5/20_18 5/20_19 5/20_20 5/20_21 5/20_22 5/20_23 5/20_24 5/20_25 5/20_26 5/20_27 5/20_28 5/20_29 5/20_30 5/20_31 5/20_32 5/20_33 5/20_34 5/20_35 5/20_36 5/20_37 5/20_38 5/20_40 5/20_41 5/20_42 5/20_43 5/20_44 5/20_45 5/20_46 5/21_13 5/21_14 5/21_15 5/21_16 5/21_17 5/21_18 5/21_19 5/21_20 5/21_21 5/21_22 5/21_23 5/21_24 5/21_25 5/21_26 5/21_27 5/21_28 5/21_29 5/21_30 5/21_31 5/21_32 5/21_33 5/21_34 5/21_35 5/21_36 5/21_37 5/21_38 5/21_39 5/21_40 5/21_43 5/21_44 5/21_45 5/21_46 5/22_13 5/22_14 5/22_15 5/22_16 5/22_17 5/22_18 5/22_19 5/22_20 5/22_21 5/22_22 5/22_23 5/22_24 5/22_25 5/22_26 5/22_27 5/22_28 5/22_29 5/22_30 5/22_31 5/22_32 5/22_33 5/22_34 5/22_35 5/22_36 5/22_37 5/22_38 5/22_39 5/22_40 5/22_41 5/22_44 5/22_45 5/22_46 5/23_13 5/23_14 5/23_15 5/23_16 5/23_17 5/23_18 5/23_19 5/23_20 5/23_21 5/23_22 5/23_23 5/23_24 5/23_25 5/23_26 5/23_27 5/23_28 5/23_29 5/23_30 5/23_31 5/23_32 5/23_33 5/23_34 5/23_35 5/23_36 5/23_37 5/23_38 5/23_39 5/23_40 5/23_41 5/23_42 5/23_44 5/23_45 5/23_46 5/24_13 5/24_14 5/24_15 5/24_16 5/24_17 5/24_18 5/24_19 5/24_20 5/24_21 5/24_22 5/24_23 5/24_24 5/24_25 5/24_26 5/24_27 5/24_28 5/24_29 5/24_30 5/24_31 5/24_32 5/24_33 5/24_34 5/24_35 5/24_36 5/24_37 5/24_38 5/24_39 5/24_40 5/24_41 5/24_42 5/24_43 5/24_44 5/24_45 5/24_46 5/24_47 5/25_13 5/25_14 5/25_15 5/25_16 5/25_17 5/25_18 5/25_19 5/25_20 5/25_21 5/25_22 5/25_23 5/25_24 5/25_25 5/25_26 5/25_27 5/25_28 5/25_29 5/25_30 5/25_31 5/25_32 5/25_33 5/25_34 5/25_35 5/25_36 5/25_37 5/25_38 5/25_39 5/25_40 5/25_41 5/25_42 5/25_43 5/25_44 5/25_45 5/25_46 5/25_47 5/25_48 5/26_13 5/26_14 5/26_15 5/26_16 5/26_17 5/26_18 5/26_19 5/26_20 5/26_21 5/26_22 5/26_23 5/26_24 5/26_25 5/26_26 5/26_27 5/26_28 5/26_29 5/26_30 5/26_31 5/26_32 5/26_33 5/26_34 5/26_35 5/26_36 5/26_37 5/26_38 5/26_39 5/26_40 5/26_41 5/26_42 5/26_43 5/26_44 5/26_45 5/26_46 5/27_13 5/27_14 5/27_15 5/27_16 5/27_17 5/27_18 5/27_19 5/27_20 5/27_21 5/27_22 5/27_23 5/27_24 5/27_25 5/27_26 5/27_27 5/27_28 5/27_29 5/27_30 5/27_31 5/27_32 5/27_33 5/27_34 5/27_35 5/27_36 5/27_37 5/27_38 5/27_39 5/27_40 5/27_41 5/27_42 5/27_43 5/27_44 5/27_45 5/28_13 5/28_14 5/28_15 5/28_16 5/28_17 5/28_18 5/28_19 5/28_20 5/28_21 5/28_22 5/28_23 5/28_24 5/28_25 5/28_26 5/28_27 5/28_28 5/28_29 5/28_30 5/28_31 5/28_32 5/28_33 5/28_34 5/28_35 5/28_36 5/28_37 5/28_38 5/28_39 5/28_40 5/28_41 5/28_42 5/28_43 5/28_44 5/29_13 5/29_14 5/29_15 5/29_16 5/29_17 5/29_18 5/29_19 5/29_20 5/29_21 5/29_22 5/29_23 5/29_24 5/29_25 5/29_26 5/29_27 5/29_28 5/29_29 5/29_30 5/29_31 5/29_32 5/29_33 5/29_34 5/29_35 5/29_36 5/29_37 5/29_38 5/29_39 5/29_40 5/29_41 5/29_42 5/29_43 5/29_46 5/29_47 5/30_15 5/30_16 5/30_17 5/30_18 5/30_19 5/30_20 5/30_21 5/30_22 5/30_23 5/30_24 5/30_25 5/30_26 5/30_27 5/30_28 5/30_29 5/30_30 5/30_31 5/30_32 5/30_33 5/30_34 5/30_35 5/30_36 5/30_37 5/30_38 5/30_39 5/30_40 5/30_41 5/31_18 5/31_19 5/31_20 5/31_21 5/31_22 5/31_23 5/31_24 5/31_25 5/31_26 5/31_27 5/31_28 5/31_29 5/31_30 5/31_31 5/31_32 5/31_33 5/31_34 5/31_35 5/31_36 5/31_37 5/31_38 5/32_18 5/32_19 5/32_20 5/32_21 5/32_22 5/32_23 5/32_24 5/32_25 5/32_26 5/32_27 5/32_28 5/32_29 5/32_30 5/32_31 5/32_32 5/32_33 5/32_34 5/32_35 5/32_36 5/32_37 5/33_18 5/33_19 5/33_20 5/33_21 5/33_22 5/33_23 5/33_24 5/33_25 5/33_26 5/33_27 5/33_28 5/33_29 5/33_30 5/33_31 5/33_32 5/33_33 5/33_34 5/33_35 5/33_36 5/34_24 5/34_25 5/34_26 5/34_27 5/34_28 5/34_29 5/34_30 5/34_31 5/34_32 5/34_33 5/34_34 5/34_35 5/34_36 5/35_25 5/35_26 5/35_27 5/35_28 5/35_29 5/35_30 5/35_31 5/35_32 5/35_33 5/35_34 5/35_35 5/36_27 5/36_28 5/36_29 5/36_30 5/36_31 5/36_32 5/36_33 5/36_34 5/36_35 5/37_29 5/37_30 5/37_34 5/37_35'.split(' '));
+  HAVE_LIST = [...HAVE];
+  const Tiles = L.TileLayer.extend({ createTile(c, done) {
+    if (HAVE.has(c.z + '/' + c.x + '_' + c.y)) return L.TileLayer.prototype.createTile.call(this, c, done);
+    const d = document.createElement('div'); setTimeout(() => done(null, d), 0); return d;
+  } });
+  new Tiles('t/{z}/{x}_{y}.webp', { tileSize: 512, minZoom: -1, maxZoom: 7, minNativeZoom: 0, maxNativeZoom: 5, noWrap: true, bounds,
+    attribution: '<a href="https://github.com/fbritoferreira/gta6" target="_blank" rel="noopener">Open GTA 6 Map</a> · CC BY 4.0' }).addTo(map);
+  renderer = L.canvas({ padding: 0.4, tolerance: 8 });
+  layer = L.layerGroup().addTo(map);
+  onMap = new Uint8Array(locs.length);
+  radiusNow = R(0);
+  markers = locs.map((r, i) => { const m = L.circleMarker([-r[3], r[2]], Object.assign({ renderer, radius: radiusNow, bubblingMouseEvents: false }, styleFor(i))); m.on('click', () => openCard(i, false)); return m; });
+  ring = L.circleMarker([0, 0], { renderer, radius: 14, color: '#fff', weight: 3, fill: false, interactive: false });
+  towns.forEach(t => L.marker([-t.y, t.x], { interactive: false, keyboard: false, icon: L.divIcon({ className: '', html: '<div class="town">' + esc(t.n) + '</div>', iconSize: [0, 0] }) }).addTo(map));
+  const ui = lsGet(LS_UI);
+  if (ui && ui.view && isFinite(ui.view.z)) map.setView([ui.view.lat, ui.view.lng], ui.view.z); else map.fitBounds(L.latLngBounds([-772, 209], [-217, 600]), { padding: [10, 10] });
+  const zc = () => map.getContainer().classList.toggle('zlow', map.getZoom() < 1.5);
+  map.on('zoomend', () => { zc(); const r = R(map.getZoom()); if (r !== radiusNow) { radiusNow = r; markers.forEach(m => m.setRadius(r)); if (map.hasLayer(ring)) ring.setRadius(r + 6); } saveUi(); });
+  map.on('moveend', saveUi);
+  map.on('click', () => { closeCard(); hideResults(); });
+  zc(); const r0 = R(map.getZoom()); if (r0 !== radiusNow) { radiusNow = r0; markers.forEach(m => m.setRadius(r0)); }
+}
+function saveUi() {
+  const c = map ? map.getCenter() : null;
+  lsSet(LS_UI, { off: cats.filter((x, i) => !enabled.has(i)).map(x => x.k), hide: hideFound, view: c ? { lat: c.lat, lng: c.lng, z: map.getZoom() } : null });
+}
+
+/* ---------- counts & panel ---------- */
+let catTotal = [], catFound = [];
+function renderCounts() {
+  catFound = cats.map(() => 0);
+  for (const r of locs) if (state.found.has(r[0])) catFound[r[1]]++;
+  let f = 0, t = 0;
+  cats.forEach((c, i) => { if (c.g !== 'lieux') { f += catFound[i]; t += catTotal[i]; } });
+  const pct = !t ? 0 : f >= t ? 100 : Math.min(99.9, Math.round(f / t * 1000) / 10);
+  $('#gCount').textContent = fmt(f);
+  $('#gTotal').textContent = 'sur ' + fmt(t) + ' à trouver · ' + pct.toLocaleString('fr-FR') + ' %';
+  $('#gBar').style.width = pct + '%';
+  $('#chipPct').textContent = pct.toLocaleString('fr-FR') + ' %';
+  $('#chipBar').style.width = pct + '%';
+  cats.forEach((c, i) => {
+    const el = document.getElementById('cc' + i); if (!el) return;
+    el.textContent = catFound[i] + '/' + catTotal[i];
+    el.classList.toggle('done', catFound[i] === catTotal[i] && catTotal[i] > 0);
+    document.getElementById('ln' + i).style.width = (catTotal[i] ? catFound[i] / catTotal[i] * 100 : 0) + '%';
+  });
+  groups.forEach(g => {
+    let gf = 0, gt = 0; cats.forEach((c, i) => { if (c.g === g.k) { gf += catFound[i]; gt += catTotal[i]; } });
+    const el = document.getElementById('gc-' + g.k); if (el) el.textContent = fmt(gf) + ' / ' + fmt(gt);
+  });
+}
+function buildPanel() {
+  $('#groups').innerHTML = groups.map(g => {
+    const rows = cats.map((c, i) => c.g !== g.k ? '' :
+      '<div class="crow"><input type="checkbox" id="cb' + i + '" data-i="' + i + '"><span class="sw" style="--c:' + esc(c.c) + '"></span><label class="cn" for="cb' + i + '">' + esc(c.n) + '</label><span class="cc" id="cc' + i + '"></span><button type="button" class="solo" data-solo="' + i + '">Seule</button><span class="ln"><i id="ln' + i + '"></i></span></div>').join('');
+    return '<details class="grp"' + (g.k !== 'lieux' && g.k !== 'cartes' ? ' open' : '') + '><summary><h3>' + esc(g.n) + '</h3><span class="gc" id="gc-' + g.k + '"></span></summary><div class="gh"><button type="button" data-gall="' + g.k + '">Tout cocher</button><button type="button" data-gnone="' + g.k + '">Tout décocher</button></div>' + rows + '</details>';
+  }).join('');
+  syncChecks();
+}
+function syncChecks() { cats.forEach((c, i) => { const cb = document.getElementById('cb' + i); if (cb) cb.checked = enabled.has(i); }); $('#hideFound').checked = hideFound; }
+function filtersChanged() { syncChecks(); refreshLayer(); saveUi(); }
+$('#groups').addEventListener('change', e => { const i = +e.target.dataset.i; if (e.target.dataset.i == null) return; if (e.target.checked) enabled.add(i); else enabled.delete(i); filtersChanged(); });
+$('#groups').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.solo != null) { enabled = new Set([+b.dataset.solo]); filtersChanged(); if (!desk()) closePanel(); toast('Seule catégorie affichée : ' + cats[+b.dataset.solo].n); }
+  if (b.dataset.gall) { cats.forEach((c, i) => { if (c.g === b.dataset.gall) enabled.add(i); }); filtersChanged(); }
+  if (b.dataset.gnone) { cats.forEach((c, i) => { if (c.g === b.dataset.gnone) enabled.delete(i); }); filtersChanged(); }
+});
+document.querySelector('.opts').addEventListener('click', e => {
+  const p = e.target.closest('button'); if (!p) return;
+  if (p.dataset.preset === 'all') enabled = new Set(cats.map((c, i) => i));
+  if (p.dataset.preset === 'none') enabled = new Set();
+  if (p.dataset.preset === 'collect') enabled = new Set(cats.map((c, i) => i).filter(i => cats[i].g !== 'lieux'));
+  filtersChanged();
+});
+$('#hideFound').addEventListener('change', e => { hideFound = e.target.checked; filtersChanged(); });
+
+const desk = () => matchMedia('(min-width:900px)').matches;
+function openPanel(tab) { selectTab(tab); $('#panel').classList.add('open'); closeCard(); }
+function closePanel() { $('#panel').classList.remove('open'); }
+function selectTab(tab) {
+  const s = tab === 'save';
+  $('#tabF').setAttribute('aria-selected', String(!s)); $('#tabS').setAttribute('aria-selected', String(s));
+  $('#paneF').hidden = s; $('#paneS').hidden = !s;
+  if (s) { renderSave(); loadHistory(); renderInstall(); renderOffline(); }
+}
+$('#tabF').onclick = () => selectTab('filters');
+$('#tabS').onclick = () => selectTab('save');
+$('#panelClose').onclick = closePanel;
+$('#chipCats').onclick = () => openPanel('filters');
+$('#chipProg').onclick = () => openPanel('filters');
+$('#chipSave').onclick = () => openPanel('save');
+
+/* ---------- save tab rendering ---------- */
+function setSt(el, txt, cls) { el.textContent = txt; el.className = 'st ' + cls; }
+function renderSave() {
+  const chip = $('#chipSave'), txt = $('#chipSaveTxt');
+  let label, cls;
+  if (cloud === 'ok') { label = pending.length ? 'Envoi…' : 'Sauvegardé'; cls = pending.length ? 's-saving' : 's-ok'; }
+  else if (cloud === 'saving') { label = 'Enregistrement…'; cls = 's-saving'; }
+  else if (cloud === 'init') { label = 'Connexion…'; cls = 's-saving'; }
+  else if (cloud === 'offline') { label = 'Hors ligne'; cls = localOk ? 's-warn' : 's-bad'; }
+  else if (cloud === 'off') { label = localOk ? 'Sur cet appareil' : 'Non sauvegardé'; cls = localOk ? 's-warn' : 's-bad'; }
+  else if (cloud === 'auth') { label = 'Jeton refusé'; cls = 's-bad'; }
+  else { label = 'Erreur de synchro'; cls = 's-bad'; }
+  txt.textContent = label;
+  const needFile = state.found.size > 0 && Date.now() - (state.ex || 0) > 7 * DAY;
+  chip.className = 'chip ' + cls + (needFile ? ' nudge' : '');
+  chip.title = needFile ? 'Pense à télécharger un fichier de sauvegarde' : 'Sauvegarde';
+  const sc = $('#stCloud');
+  if (cloud === 'ok' && !pending.length) setSt(sc, 'À jour · ' + when(cloudAt), 'ok');
+  else if (cloud === 'ok' || cloud === 'saving' || cloud === 'init') setSt(sc, 'Envoi en cours…', 'warn');
+  else if (cloud === 'offline') setSt(sc, 'Hors ligne, en attente', 'warn');
+  else if (cloud === 'off') setSt(sc, 'Pas activée', 'warn');
+  else if (cloud === 'auth') setSt(sc, 'Jeton refusé', 'bad');
+  else setSt(sc, 'Erreur, nouvel essai bientôt', 'bad');
+  $('#ghSetup').hidden = !(cloud === 'off' || cloud === 'auth');
+  $('#ghOn').hidden = !cfg.main || cloud === 'auth';
+  if (cfg.main) $('#ghLink').href = 'https://gist.github.com/' + encodeURIComponent(cfg.main);
+  setSt($('#stLocal'), localOk ? 'À jour' : 'Indisponible', localOk ? 'ok' : 'bad');
+  setSt($('#stFile'), state.ex ? 'Dernier : ' + when(state.ex) : 'Jamais fait', state.ex && !needFile ? 'ok' : 'warn');
+  const rm = $('#remind');
+  const msgs = [];
+  if (cloud === 'off') msgs.push("Active la synchro GitHub ci-dessous : sans elle, tes coches ne sont que sur cet appareil.");
+  if (cloud === 'auth') msgs.push("GitHub refuse le jeton enregistré (supprimé ou expiré). Crée-en un nouveau ci-dessous : tes coches sont toujours sur cet appareil.");
+  if (needFile) msgs.push(state.ex ? 'Ton dernier fichier de sauvegarde date de ' + Math.floor((Date.now() - state.ex) / DAY) + ' jours. Un nouveau prend 10 secondes.' : "Tu n'as encore jamais téléchargé de fichier de sauvegarde. Fais-en un : c'est ta copie de secours à toi.");
+  rm.hidden = !msgs.length; rm.textContent = msgs.join(' ');
+}
+function renderHistory() {
+  const ul = $('#history');
+  if (!histRows.length) { ul.innerHTML = '<li><span class="empty">' + (cfg.main ? 'La première copie sera faite après ta première coche du jour.' : 'Disponible avec la synchro GitHub.') + '</span></li>'; return; }
+  const label = { auto: 'Copie du jour', securite: 'Copie de sécurité (baisse soudaine)', reinit: 'Avant la remise à zéro', import: 'Avant un import', restauration: 'Avant une restauration', connexion: 'Compte GitHub avant connexion', appareil: 'Cet appareil avant connexion' };
+  ul.innerHTML = histRows.map((h, k) => '<li><div><b>' + esc(label[h.b.r] || 'Copie') + '</b><small>' + esc(dateFr(+h.b.sat || +h.b.at || Date.now())) + ' · ' + fmt(+h.b.c || 0) + ' trouvés' + (h.src === 'local' ? ' · sur cet appareil' : '') + '</small></div><button class="btn" type="button" data-h="' + k + '">Restaurer</button></li>').join('');
+}
+$('#history').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-h]'); if (!b) return;
+  const h = histRows[+b.dataset.h]; if (!h) return;
+  const ok = await ask('Restaurer cette copie ?', 'Ta progression reviendra à ' + fmt(+h.b.c || 0) + ' éléments trouvés (copie du ' + dateFr(+h.b.sat || +h.b.at) + '). Ta progression actuelle (' + fmt(state.found.size) + ') sera d\'abord mise de côté dans les copies.', [['Annuler', ''], ['Restaurer', 'go', 'primary']]);
+  if (ok !== 'go') return;
+  await snapshot('restauration');
+  change({ set: typeof h.b.f === 'string' ? h.b.f : '', notes: cleanNotes(h.b.n) });
+  toast('Copie restaurée : ' + fmt(state.found.size) + ' trouvés'); loadHistory();
+});
+
+/* ---------- export / import ---------- */
+const b64e = s => { const u = new TextEncoder().encode(s); let b = ''; u.forEach(x => b += String.fromCharCode(x)); return btoa(b); };
+const b64d = s => new TextDecoder().decode(Uint8Array.from(atob(s), c => c.charCodeAt(0)));
+function exportPayload() { return Object.assign({ app: 'leonida-fr' }, body(), { exportedAt: new Date().toISOString() }); }
+function markExported() { change({ ex: Date.now() }, []); }
+$('#btnExport').onclick = async () => {
+  const data = JSON.stringify(exportPayload());
+  const name = 'gta6-leonida-sauvegarde-' + dayId() + '.json';
+  const file = new File([data], name, { type: 'application/json' });
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'Sauvegarde Leonida' });
+      markExported(); toast('Choisis « Enregistrer dans Fichiers » pour la garder.'); return;
+    }
+  } catch (e) { if (e && e.name === 'AbortError') { toast('Partage annulé.'); return; } }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  markExported(); toast('Fichier téléchargé. Range-le en lieu sûr.');
+};
+function codeString() { return 'LEONIDA1:' + b64e(JSON.stringify(exportPayload())); }
+function showCode() { $('#codeBox').hidden = false; const t = $('#codeText'); t.value = codeString(); t.focus(); t.select(); }
+$('#btnCopy').onclick = async () => {
+  const code = codeString();
+  try { await navigator.clipboard.writeText(code); markExported(); toast('Code copié. Colle-le dans une note pour le garder.'); }
+  catch (e) { showCode(); markExported(); toast('Sélectionne le code et copie-le.'); }
+};
+$('#btnPaste').onclick = () => { const b = $('#pasteBox'); b.hidden = !b.hidden; if (!b.hidden) $('#pasteText').focus(); };
+$('#btnPasteGo').onclick = () => importText($('#pasteText').value);
+$('#fileIn').onchange = async e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return; try { importText(await f.text()); } catch (err) { toast('Impossible de lire ce fichier.'); } };
+async function importText(raw) {
+  let o = null; const s = String(raw || '').trim();
+  try { o = s.startsWith('LEONIDA1:') ? JSON.parse(b64d(s.slice(9).replace(/\s+/g, ''))) : JSON.parse(s); } catch (e) { o = null; }
+  if (!o || typeof o !== 'object' || typeof o.f !== 'string' || !/^([a-z0-9-]+:[0-9,]*)?(;[a-z0-9-]+:[0-9,]*)*$/.test(o.f)) { await ask('Sauvegarde illisible', "Ce fichier ou ce code ne ressemble pas à une sauvegarde de cette carte.", [['OK', '', 'primary']]); return; }
+  const inc = new Set([...decodeFound(o.f)].filter(id => idIndex.has(id)));
+  const notes = cleanNotes(o.n);
+  const date = o.exportedAt ? dateFr(Date.parse(o.exportedAt)) : (o.at ? dateFr(+o.at) : 'date inconnue');
+  const r = await ask('Importer cette sauvegarde ?', 'Elle contient ' + fmt(inc.size) + ' éléments trouvés (sauvegarde du ' + date + '). Tu en as ' + fmt(state.found.size) + ' actuellement. « Fusionner » garde tout ce qui est coché des deux côtés.', [['Annuler', ''], ['Remplacer', 'replace'], ['Fusionner', 'merge', 'primary']]);
+  if (!r) return;
+  await snapshot('import');
+  const next = r === 'merge' ? new Set([...state.found, ...inc]) : inc;
+  const nn = r === 'merge' ? Object.assign({}, notes, state.notes) : notes;
+  change({ set: encodeFound(next), notes: nn, ex: +o.ex || 0 });
+  $('#pasteBox').hidden = true; $('#pasteText').value = '';
+  toast('Import terminé : ' + fmt(state.found.size) + ' trouvés.'); loadHistory();
+}
+$('#btnReset').onclick = async () => {
+  const r = await ask('Tout décocher ?', 'Tes ' + fmt(state.found.size) + ' éléments trouvés et tes notes seront effacés. Une copie est gardée dans « Copies automatiques » pour revenir en arrière.', [['Annuler', ''], ['Tout décocher', 'go', 'danger']]);
+  if (r !== 'go') return;
+  await snapshot('reinit');
+  change({ set: '', notes: {} });
+  toast('Progression remise à zéro.', 'Annuler', async () => { const u = (lsGet(LS_UNDO) || [])[0]; if (u) change({ set: u.f || '', notes: cleanNotes(u.n) }); toast('Retour en arrière effectué.'); });
+  loadHistory();
+};
+
+/* ---------- card ---------- */
+let noteTmr = null;
+function fillCard(i) {
+  const r = locs[i], c = cats[r[1]], on = state.found.has(r[0]);
+  $('#cSw').style.background = c.c;
+  $('#cCat').textContent = c.n + (r[9] ? ' · ' + r[9] : '');
+  $('#cName').textContent = r[4];
+  $('#cPlace').textContent = r[7] || 'Leonida';
+  $('#cDesc').textContent = r[5] || 'Pas de description pour ce point.';
+  $('#cMt').hidden = !r[6];
+  $('#cOrigBox').hidden = !r[6]; $('#cOrig').textContent = r[6] || '';
+  const fb = $('#cFound'); fb.classList.toggle('on', on); fb.textContent = on ? '✓ Trouvé — annuler' : 'Marquer comme trouvé';
+  if (document.activeElement !== $('#cNote')) $('#cNote').value = state.notes[r[0]] || '';
+  const a = $('#cLink'); a.href = 'https://fbritoferreira.github.io/gta6/?id=' + encodeURIComponent(r[0]); a.textContent = r[8] ? "Photo et fiche d'origine ↗" : "Voir sur la carte d'origine ↗";
+}
+function openCard(i, fly) {
+  cur = i; const r = locs[i]; const ll = L.latLng(-r[3], r[2]);
+  fillCard(i); $('#card').hidden = false; hideResults();
+  if (!desk()) closePanel();
+  ring.setLatLng(ll).setRadius(radiusNow + 6); if (!map.hasLayer(ring)) ring.addTo(map);
+  const after = () => {
+    const c = $('#card').getBoundingClientRect(), m = map.getContainer().getBoundingClientRect(), p = map.latLngToContainerPoint(ll);
+    const x = p.x + m.left, y = p.y + m.top, pad = 36;
+    if (x < c.left - pad || x > c.right + pad || y < c.top - pad || y > c.bottom + pad) return;
+    if (desk()) map.panBy([p.x - (c.left - m.left) / 2, 0], { animate: true });
+    else map.panBy([0, p.y - (c.top - m.top) / 2], { animate: true });
+  };
+  if (fly) { map.setView(ll, Math.max(map.getZoom(), 4), { animate: false }); after(); } else after();
+}
+function closeCard() { if (cur < 0) return; flushNote(); cur = -1; $('#card').hidden = true; if (ring && map.hasLayer(ring)) map.removeLayer(ring); }
+$('#cClose').onclick = closeCard;
+$('#cFound').onclick = () => { if (cur < 0) return; const id = locs[cur][0]; const on = !state.found.has(id); setFound(id, on); fillCard(cur); if (on) toast('Trouvé : ' + locs[cur][4]); };
+$('#cNote').addEventListener('input', () => { clearTimeout(noteTmr); noteTmr = setTimeout(flushNote, 800); });
+$('#cNote').addEventListener('blur', flushNote);
+function flushNote() {
+  clearTimeout(noteTmr); if (cur < 0) return;
+  const id = locs[cur][0], v = $('#cNote').value.trim().slice(0, 500);
+  if ((state.notes[id] || '') !== v) change({ id, note: v }, []);
+}
+$('#cNext').onclick = () => {
+  if (cur < 0) return; const r = locs[cur]; let best = -1, bd = Infinity;
+  locs.forEach((o, j) => { if (j === cur || o[1] !== r[1] || state.found.has(o[0])) return; const d = (o[2] - r[2]) ** 2 + (o[3] - r[3]) ** 2; if (d < bd) { bd = d; best = j; } });
+  if (best < 0) { toast('Plus rien à trouver dans cette catégorie, bravo !'); return; }
+  openCard(best, true);
+};
+
+/* ---------- search ---------- */
+let sIndex = [], sTmr = null;
+function hideResults() { $('#results').hidden = true; }
+$('#q').addEventListener('input', () => { clearTimeout(sTmr); sTmr = setTimeout(runSearch, 120); });
+$('#q').addEventListener('focus', () => { if ($('#q').value.trim()) runSearch(); });
+$('#q').addEventListener('keydown', e => { if (e.key === 'Escape') { hideResults(); e.target.blur(); } if (e.key === 'Enter') { const b = $('#results button'); if (b) b.click(); } });
+function runSearch() {
+  const words = norm($('#q').value).split(/\s+/).filter(Boolean), box = $('#results');
+  if (!words.length) { hideResults(); return; }
+  const hits = [];
+  for (let i = 0; i < sIndex.length && hits.length < 40; i++) if (words.every(w => sIndex[i].includes(w))) hits.push(i);
+  box.innerHTML = hits.length ? hits.map(i => { const r = locs[i], c = cats[r[1]]; return '<button type="button" data-r="' + i + '"><span class="sw" style="width:12px;height:12px;border-radius:50%;background:' + esc(c.c) + '"></span><span>' + esc(r[4]) + '<small>' + esc(c.n) + (r[7] ? ' · ' + esc(r[7]) : '') + '</small></span><span>' + (state.found.has(r[0]) ? '✓' : '') + '</span></button>'; }).join('') : '<div class="none">Aucun résultat.</div>';
+  box.hidden = false;
+}
+$('#results').addEventListener('click', e => { const b = e.target.closest('button[data-r]'); if (!b) return; const i = +b.dataset.r; $('#q').blur(); if (!enabled.has(locs[i][1])) { enabled.add(locs[i][1]); filtersChanged(); } openCard(i, true); });
+
+/* ---------- dialog & toast ---------- */
+function ask(title, text, buttons) {
+  return new Promise(res => {
+    const d = $('#dialog'); $('#dTitle').textContent = title; $('#dText').textContent = text;
+    const act = $('#dAct'); act.innerHTML = '';
+    buttons.forEach(([label, val, kind]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (kind ? ' ' + kind : ''); b.textContent = label; b.onclick = () => { d.hidden = true; res(val); }; act.appendChild(b); });
+    d.hidden = false; act.lastChild.focus();
+    d.onkeydown = e => { if (e.key === 'Escape') { d.hidden = true; res(''); } };
+  });
+}
+let toastTmr = null;
+function toast(msg, action, fn) {
+  const t = $('#toast'), b = $('#toastBtn'); $('#toastTxt').textContent = msg;
+  b.hidden = !action; if (action) { b.textContent = action; b.onclick = () => { t.hidden = true; fn(); }; }
+  t.hidden = false; clearTimeout(toastTmr); toastTmr = setTimeout(() => { t.hidden = true; }, action ? 10000 : 3200);
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#dialog').hidden) { closeCard(); closePanel(); } });
+
+/* ---------- app: install, offline, updates ---------- */
+const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; renderInstall(); });
+window.addEventListener('appinstalled', () => { installEvt = null; renderInstall(); toast('Appli installée.'); });
+function renderInstall() {
+  const h = $('#installHint'), b = $('#btnInstall');
+  if (standalone()) { h.textContent = "Appli installée ✓ Tes réglages (synchro GitHub) se font ici, dans l'appli."; b.hidden = true; }
+  else if (installEvt) { h.textContent = "Installe la carte comme une appli : icône sur l'écran d'accueil, plein écran, marche hors ligne."; b.hidden = false; }
+  else if (isIOS) { h.textContent = "Pour l'installer : bouton Partager ▸ « Sur l'écran d'accueil ». Ensuite, ouvre-la depuis l'icône et active la synchro GitHub dedans (l'appli installée a sa propre mémoire, séparée de Safari)."; b.hidden = true; }
+  else { h.textContent = "Ton navigateur peut installer la carte comme une appli depuis son menu (« Installer » ou « Ajouter à l'écran d'accueil »)."; b.hidden = true; }
+}
+$('#btnInstall').onclick = async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; renderInstall(); };
+async function renderOffline() {
+  const st = $('#offlineSt');
+  if (!('caches' in window) || !HAVE_LIST.length) { st.textContent = ''; return; }
+  try {
+    const c = await caches.open('leonida-tiles'); const keys = await c.keys();
+    st.textContent = keys.length >= HAVE_LIST.length ? 'Toute la carte est disponible hors ligne ✓' : fmt(keys.length) + ' / ' + fmt(HAVE_LIST.length) + ' morceaux de carte gardés sur cet appareil (les zones déjà vues marchent hors ligne).';
+  } catch (e) { st.textContent = ''; }
+}
+$('#btnOffline').onclick = async () => {
+  if (!('caches' in window)) { toast("Ce navigateur ne permet pas le hors ligne."); return; }
+  const b = $('#btnOffline'), st = $('#offlineSt'); b.disabled = true;
+  const c = await caches.open('leonida-tiles'); let done = 0, fail = 0;
+  const urls = HAVE_LIST.map(k => new URL('t/' + k + '.webp', location.href).href);
+  for (let i = 0; i < urls.length; i += 6) {
+    await Promise.all(urls.slice(i, i + 6).map(async u => {
+      try { if (!(await c.match(u))) { const r = await fetch(u); if (r.ok) await c.put(u, r); else fail++; } } catch (e) { fail++; }
+      done++;
+    }));
+    st.textContent = 'Téléchargement… ' + Math.round(done / urls.length * 100) + ' %';
+  }
+  b.disabled = false; renderOffline();
+  toast(fail ? fail + ' morceaux ont échoué, relance pour compléter.' : 'Carte complète gardée pour le hors ligne.');
+};
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    const show = () => { $('#upd').hidden = false; };
+    if (reg.waiting && navigator.serviceWorker.controller) show();
+    reg.addEventListener('updatefound', () => { const w = reg.installing; if (w) w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) show(); }); });
+    $('#updGo').onclick = () => { if (reg.waiting) reg.waiting.postMessage('skip'); else location.reload(); };
+  }).catch(() => {});
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (reloaded) return; reloaded = true; saveLocal(); location.reload(); });
+}
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+/* ---------- boot ---------- */
+loadLocal(); renderSave();
+fetch('data.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(d => {
+  cats = d.cats; groups = d.groups; locs = d.locs;
+  locs.forEach((r, i) => idIndex.set(r[0], i));
+  catTotal = cats.map(c => c.t);
+  sIndex = locs.map(r => norm(r[4] + ' ' + cats[r[1]].n + ' ' + (r[7] || '') + ' ' + (r[9] || '')));
+  $('#built').textContent = new Date(d.built).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const ui = lsGet(LS_UI);
+  const off = new Set(ui && Array.isArray(ui.off) ? ui.off : cats.filter(c => c.g === 'lieux').map(c => c.k));
+  enabled = new Set(cats.map((c, i) => i).filter(i => !off.has(cats[i].k)));
+  hideFound = !!(ui && ui.hide);
+  initMap(d.towns || []);
+  buildPanel(); refreshLayer(); renderCounts(); renderSave();
+  if (desk()) selectTab('filters');
+  $('#loader').hidden = true;
+  renderInstall(); renderOffline(); loadHistory();
+  if (cfg.main) pull();
+}).catch(err => { $('#loaderTxt').textContent = 'Impossible de charger les données de la carte (' + err.message + '). Recharge la page.'; });
+}
+</script>
+</body>
+</html>
