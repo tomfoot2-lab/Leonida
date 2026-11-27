@@ -29,4 +29,6 @@ Le jeton GitHub reste sur l'appareil. Il n'est jamais envoyé ailleurs qu'à `ap
 Carte, tuiles et données : [Open GTA 6 Map](https://github.com/fbritoferreira/gta6) (fbritoferreira), licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.fr).
 Modifications : catégories et noms adaptés en français, descriptions traduites automatiquement, tuiles réassemblées et allégées.
 
+Photos des fiches : captures du jeu © Rockstar Games / Take-Two Interactive, non couvertes par la licence CC BY. Elles ne sont pas copiées dans ce dépôt : la carte les affiche directement depuis Open GTA 6 Map (site du projet, ou copie de son dépôt via jsDelivr pour les plus récentes). Les photos déjà vues sont gardées dans le cache de l'appareil pour le hors ligne.
+
 Projet de fan non officiel, sans lien avec Rockstar Games ni Take-Two Interactive. Grand Theft Auto et les noms associés appartiennent à leurs propriétaires.

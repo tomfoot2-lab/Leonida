@@ -155,6 +155,24 @@ a.btn{text-decoration:none;color:inherit}
 .ccode b{font:700 30px/1 "Barlow Condensed",sans-serif;letter-spacing:.06em;overflow-wrap:anywhere}
 .ccode small{grid-column:1/-1;color:#c9cfe0;font-size:14px;margin-top:4px}
 .ccode.nocode b{font-size:20px;letter-spacing:0}
+.cphoto{margin:2px 0 10px}
+.cphoto button{display:block;width:100%;aspect-ratio:16/9;max-height:32vh;padding:0;border:0;border-radius:14px;overflow:hidden;background:#17151f;position:relative;cursor:zoom-in}
+.cphoto img{width:100%;height:100%;object-fit:contain;display:block;opacity:1;transition:opacity .2s}
+.cphoto.loading img{opacity:0}
+.cphoto.loading button::after{content:"Chargement de la photo…";position:absolute;inset:0;display:grid;place-items:center;color:#c9cfe0;font-size:14px}
+.cphoto button::before{content:"";position:absolute;right:8px;bottom:8px;width:30px;height:30px;border-radius:9px;background:rgba(10,12,22,.6) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 4h5v5M9 20H4v-5M20 4l-6 6M4 20l6-6'/%3E%3C/svg%3E") center/18px no-repeat;z-index:1}
+.cphoto.loading button::before,.cphoto.err button::before{display:none}
+.cphoto.err button{cursor:default;aspect-ratio:auto;height:44px}.cphoto.err img{display:none}
+.cphoto.err button::after{content:"Photo indisponible (pas de réseau ?)";position:absolute;inset:0;display:grid;place-items:center;color:#c9cfe0;font-size:14px}
+.cphoto figcaption{font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.hasphoto{max-height:min(74vh,74dvh)}
+.cphoto figcaption a{color:inherit}
+.viewer{position:fixed;inset:0;z-index:60;background:#05060b;touch-action:none;overflow:hidden;user-select:none;-webkit-user-select:none}
+.viewer[hidden]{display:none}
+.viewer img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;transform-origin:0 0;will-change:transform;-webkit-user-drag:none}
+.viewer .x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;width:48px;height:48px;border:0;border-radius:14px;background:rgba(255,255,255,.14);color:#fff;font-size:26px;line-height:1}
+.viewer p{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom));margin:0;padding:6px 12px;border-radius:999px;background:rgba(10,12,22,.7);color:#dfe3ee;font-size:13px;white-space:nowrap;pointer-events:none;transition:opacity .3s}
+.viewer.zoomed p{opacity:0}
 .cmt{font-size:12px;color:var(--muted);margin:0 0 8px}
 .corig summary{font-size:14px;color:var(--pinkink);cursor:pointer;min-height:32px}
 .corig p{margin:4px 0 8px;color:var(--muted);font-size:14px}
@@ -187,7 +205,7 @@ a.btn{text-decoration:none;color:inherit}
  .desk{display:inline-flex}
  #map{left:380px}
  .bar{left:380px;grid-template-columns:minmax(0,440px) auto;align-items:start;padding-left:14px}
- .card{left:auto;right:16px;bottom:16px;width:390px;border-radius:18px;max-height:calc(100vh - 110px)}
+ .card,.card.hasphoto{left:auto;right:16px;bottom:16px;width:390px;border-radius:18px;max-height:calc(100vh - 110px)}
 }
 @media(prefers-reduced-motion:reduce){.panel{transition:none}.chip.s-saving .dot{animation:none}}
 </style>
@@ -271,7 +289,7 @@ a.btn{text-decoration:none;color:inherit}
     <h3>Repartir de zéro</h3>
     <p class="lead" style="margin-top:0">Une copie de ta progression est faite juste avant, tu pourras revenir en arrière.</p>
     <button class="btn danger" id="btnReset" type="button">Tout décocher…</button>
-    <p class="credit">Carte et données : <a href="https://github.com/fbritoferreira/gta6" target="_blank" rel="noopener">Open GTA 6 Map</a> (fbritoferreira), licence <a href="https://creativecommons.org/licenses/by/4.0/deed.fr" target="_blank" rel="noopener">CC BY 4.0</a>. Catégories et noms adaptés en français, descriptions traduites automatiquement. Données du <span id="built"></span>. Pictogrammes : <a href="https://tabler.io/icons" target="_blank" rel="noopener">Tabler Icons</a> (MIT). Projet de fan non officiel, sans lien avec Rockstar Games. Carte affichée avec <a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>.</p>
+    <p class="credit">Carte et données : <a href="https://github.com/fbritoferreira/gta6" target="_blank" rel="noopener">Open GTA 6 Map</a> (fbritoferreira), licence <a href="https://creativecommons.org/licenses/by/4.0/deed.fr" target="_blank" rel="noopener">CC BY 4.0</a>. Catégories et noms adaptés en français, descriptions traduites automatiquement. Données du <span id="built"></span>. Pictogrammes : <a href="https://tabler.io/icons" target="_blank" rel="noopener">Tabler Icons</a> (MIT). Photos des fiches : captures du jeu © Rockstar Games, affichées depuis Open GTA 6 Map (non copiées ici). Projet de fan non officiel, sans lien avec Rockstar Games. Carte affichée avec <a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>.</p>
   </div>
 </aside>
 
@@ -280,6 +298,7 @@ a.btn{text-decoration:none;color:inherit}
   <h2 id="cName"></h2>
   <p class="cplace" id="cPlace"></p>
   <div class="ccode" id="cCode" hidden><span>Code</span><b id="cCodeV"></b><small id="cCodeD"></small></div>
+  <figure class="cphoto" id="cPhoto" hidden><button type="button" id="cPhotoBtn" aria-label="Agrandir la photo"><img id="cPhotoImg" alt="" crossorigin="anonymous" decoding="async"></button><figcaption>Photo © Rockstar Games · via <a id="cPhotoSrc" href="#" target="_blank" rel="noopener">Open GTA 6 Map</a></figcaption></figure>
   <p class="cdesc" id="cDesc"></p>
   <p class="cmt" id="cMt">Description traduite automatiquement.</p>
   <details class="corig" id="cOrigBox"><summary>Texte original (anglais)</summary><p id="cOrig"></p></details>
@@ -289,6 +308,7 @@ a.btn{text-decoration:none;color:inherit}
   <div class="row"><button class="btn" id="cNext" type="button">Suivant non trouvé à côté</button><a id="cLink" href="#" target="_blank" rel="noopener">Photo et fiche d'origine ↗</a></div>
 </article>
 
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Photo agrandie"><img id="vImg" alt="" crossorigin="anonymous"><button class="x" id="vClose" type="button" aria-label="Fermer">×</button><p>Pince ou double-touche pour zoomer · touche pour fermer</p></div>
 <div class="dialog" id="dialog" hidden role="dialog" aria-modal="true" aria-labelledby="dTitle"><div class="dbox"><h3 id="dTitle"></h3><p id="dText"></p><div class="dact" id="dAct"></div></div></div>
 <div class="toast" id="toast" hidden role="status"><span id="toastTxt"></span><button id="toastBtn" type="button" hidden></button></div>
 <div class="upd" id="upd" hidden role="status"><span>Nouvelle version disponible</span><button class="btn primary" id="updGo" type="button">Recharger</button></div>
@@ -867,6 +887,73 @@ $('#btnReset').onclick = async () => {
 
 /* ---------- card ---------- */
 let noteTmr = null;
+// Photos : servies par le projet Open GTA 6 Map (pas copiées ici). Vide = pas de photo dans la fiche.
+const PHOTO_HOSTS = ['https://fbritoferreira.github.io/gta6/screenshots/', 'https://cdn.jsdelivr.net/gh/fbritoferreira/gta6@90e1acf92e9e8e26437259dc132db323db41483e/public/screenshots/'];
+function photoSet(img, file, done) {
+  let k = 0;
+  img.onload = () => done(true);
+  img.onerror = () => { if (++k < PHOTO_HOSTS.length) img.src = PHOTO_HOSTS[k] + file; else done(false); };
+  img.src = PHOTO_HOSTS[0] + file;
+}
+function fillPhoto(r) {
+  const ph = $('#cPhoto'), img = $('#cPhotoImg');
+  const on = !!(PHOTO_HOSTS.length && r[8]);
+  $('#card').classList.toggle('hasphoto', on);
+  if (!on) { ph.hidden = true; img.dataset.f = ''; return; }
+  ph.hidden = false;
+  $('#cPhotoSrc').href = 'https://fbritoferreira.github.io/gta6/?id=' + encodeURIComponent(r[0]);
+  if (img.dataset.f === r[8]) return;
+  img.dataset.f = r[8]; ph.classList.add('loading'); ph.classList.remove('err');
+  const f = r[8];
+  photoSet(img, f, ok => { if (img.dataset.f !== f) return; ph.classList.remove('loading'); ph.classList.toggle('err', !ok); });
+}
+/* photo plein écran : pincer, double-toucher, glisser */
+const V = { s: 1, x: 0, y: 0, pts: new Map(), g: null, lastTap: 0, tapTmr: null, moved: false };
+function vApply() { $('#vImg').style.transform = `translate(${V.x}px,${V.y}px) scale(${V.s})`; $('#viewer').classList.toggle('zoomed', V.s > 1.05); }
+function vClamp() {
+  const w = innerWidth, h = innerHeight;
+  V.s = Math.min(6, Math.max(1, V.s));
+  V.x = Math.min(0, Math.max(w * (1 - V.s), V.x)); V.y = Math.min(0, Math.max(h * (1 - V.s), V.y));
+}
+function vZoomAt(qx, qy, s) { const px = (qx - V.x) / V.s, py = (qy - V.y) / V.s; V.s = s; V.x = qx - s * px; V.y = qy - s * py; vClamp(); vApply(); }
+function openViewer() {
+  const img = $('#cPhotoImg'); if (!img.currentSrc || $('#cPhoto').classList.contains('loading') || $('#cPhoto').classList.contains('err')) return;
+  V.s = 1; V.x = 0; V.y = 0; V.pts.clear(); V.g = null; vApply();
+  $('#vImg').src = img.currentSrc; $('#viewer').hidden = false; $('#vClose').focus();
+}
+function closeViewer() { $('#viewer').hidden = true; clearTimeout(V.tapTmr); $('#cPhotoBtn').focus(); }
+$('#cPhotoBtn').onclick = openViewer;
+$('#vClose').onclick = e => { e.stopPropagation(); closeViewer(); };
+(() => {
+  const vw = $('#viewer');
+  const mid = () => { const a = [...V.pts.values()]; return a.length > 1 ? { x: (a[0].x + a[1].x) / 2, y: (a[0].y + a[1].y) / 2, d: Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y) || 1 } : { x: a[0].x, y: a[0].y, d: 1 }; };
+  const start = () => { const m = mid(); V.g = { m, s: V.s, x: V.x, y: V.y, n: V.pts.size }; };
+  vw.addEventListener('pointerdown', e => { if (e.target.closest('.x')) return; vw.setPointerCapture(e.pointerId); V.pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (V.pts.size === 1) V.moved = false; start(); });
+  vw.addEventListener('pointermove', e => {
+    if (!V.pts.has(e.pointerId) || !V.g) return;
+    V.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const m = mid(), g = V.g;
+    if (Math.hypot(m.x - g.m.x, m.y - g.m.y) > 8 || V.pts.size > 1) V.moved = true;
+    if (V.pts.size > 1 && g.n > 1) { const s = Math.min(6, Math.max(1, g.s * m.d / g.m.d)), px = (g.m.x - g.x) / g.s, py = (g.m.y - g.y) / g.s; V.s = s; V.x = m.x - s * px; V.y = m.y - s * py; }
+    else if (V.s > 1) { V.x = g.x + m.x - g.m.x; V.y = g.y + m.y - g.m.y; }
+    vClamp(); vApply();
+  });
+  const up = e => {
+    if (!V.pts.has(e.pointerId)) return;
+    V.pts.delete(e.pointerId);
+    if (V.pts.size) { start(); return; }
+    V.g = null;
+    if (V.moved || e.type === 'pointercancel') return;
+    const now = Date.now();
+    if (now - V.lastTap < 320) { clearTimeout(V.tapTmr); V.lastTap = 0; if (V.s > 1.05) { V.s = 1; V.x = 0; V.y = 0; vApply(); } else vZoomAt(e.clientX, e.clientY, 2.6); return; }
+    V.lastTap = now;
+    clearTimeout(V.tapTmr); V.tapTmr = setTimeout(() => { if (V.s <= 1.05) closeViewer(); }, 330);
+  };
+  vw.addEventListener('pointerup', up); vw.addEventListener('pointercancel', up);
+  vw.addEventListener('wheel', e => { e.preventDefault(); vZoomAt(e.clientX, e.clientY, V.s * Math.exp(-e.deltaY * 0.0025)); }, { passive: false });
+  vw.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); closeViewer(); } });
+  addEventListener('resize', () => { if (!vw.hidden) { vClamp(); vApply(); } });
+})();
 function fillCard(i) {
   const r = locs[i], c = cats[r[1]], on = state.found.has(r[0]);
   $('#cSw').innerHTML = badge(c);
@@ -876,12 +963,13 @@ function fillCard(i) {
   const cc = $('#cCode'), hasCode = !!(r[10] || r[11]);
   cc.hidden = !hasCode;
   if (hasCode) { cc.classList.toggle('nocode', !r[10]); $('#cCodeV').textContent = r[10] || (/^Pas besoin/.test(r[11]) ? 'Aucun' : 'À trouver'); $('#cCodeD').textContent = r[11] || ''; }
+  fillPhoto(r);
   $('#cDesc').textContent = r[5] || 'Pas de description pour ce point.';
   $('#cMt').hidden = !r[6];
   $('#cOrigBox').hidden = !r[6]; $('#cOrig').textContent = r[6] || '';
   const fb = $('#cFound'); fb.classList.toggle('on', on); fb.textContent = on ? '✓ Trouvé — annuler' : 'Marquer comme trouvé';
   if (document.activeElement !== $('#cNote')) $('#cNote').value = state.notes[r[0]] || '';
-  const a = $('#cLink'); a.href = 'https://fbritoferreira.github.io/gta6/?id=' + encodeURIComponent(r[0]); a.textContent = r[8] ? "Photo et fiche d'origine ↗" : "Voir sur la carte d'origine ↗";
+  const a = $('#cLink'); a.href = 'https://fbritoferreira.github.io/gta6/?id=' + encodeURIComponent(r[0]); a.textContent = !r[8] ? "Voir sur la carte d'origine ↗" : PHOTO_HOSTS.length ? "Fiche d'origine ↗" : "Photo et fiche d'origine ↗";
 }
 function openCard(i, fly) {
   cur = i; const r = locs[i]; const ll = L.latLng(-r[3], r[2]);
@@ -946,7 +1034,7 @@ function toast(msg, action, fn) {
   b.hidden = !action; if (action) { b.textContent = action; b.onclick = () => { t.hidden = true; fn(); }; }
   t.hidden = false; clearTimeout(toastTmr); toastTmr = setTimeout(() => { t.hidden = true; }, action ? 10000 : 3200);
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#dialog').hidden) { closeCard(); closePanel(); } });
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!$('#viewer').hidden) { closeViewer(); return; } if ($('#dialog').hidden) { closeCard(); closePanel(); } });
 
 /* ---------- app: install, offline, updates ---------- */
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;

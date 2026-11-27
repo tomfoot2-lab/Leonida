@@ -1,11 +1,13 @@
 // Leonida — carte FR : fonctionnement hors ligne.
 // Coquille et données : réseau d'abord (pour recevoir les mises à jour), cache en secours.
-// Morceaux de carte et polices : cache d'abord. La synchro GitHub n'est jamais mise en cache.
-const VERSION = 'v1';
+// Morceaux de carte, polices et photos déjà vues : cache d'abord. La synchro GitHub n'est jamais mise en cache.
+const VERSION = 'v2';
 const SHELL = 'leonida-shell-' + VERSION;
 const DATA = 'leonida-data';
 const TILES = 'leonida-tiles';
 const FONTS = 'leonida-fonts';
+const PHOTOS = 'leonida-photos';
+const PHOTO_MAX = 400;
 const SHELL_FILES = ['./', './index.html', './manifest.webmanifest', './vendor/leaflet.js', './vendor/leaflet.css',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon.png', './data.json'];
 
@@ -27,6 +29,13 @@ self.addEventListener('fetch', e => {
   const u = new URL(req.url);
   if (u.hostname === 'api.github.com' || u.hostname.endsWith('githubusercontent.com')) return;
   if (u.hostname === 'fonts.googleapis.com' || u.hostname === 'fonts.gstatic.com') { e.respondWith(cacheFirst(FONTS, req)); return; }
+  if ((u.hostname === 'fbritoferreira.github.io' && u.pathname.startsWith('/gta6/screenshots/'))
+    || (u.hostname === 'cdn.jsdelivr.net' && u.pathname.startsWith('/gh/fbritoferreira/gta6@'))) {
+    const p = cacheFirst(PHOTOS, req);
+    e.respondWith(p);
+    e.waitUntil(p.then(res => res.ok ? trim(PHOTOS, PHOTO_MAX) : null).catch(() => {}));
+    return;
+  }
   if (u.origin !== self.location.origin) return;
   if (u.pathname.includes('/t/')) { e.respondWith(cacheFirst(TILES, req)); return; }
   e.respondWith(networkFirst(u.pathname.endsWith('/data.json') ? DATA : SHELL, req));
@@ -56,4 +65,11 @@ async function networkFirst(name, req) {
     if (hit) return hit;
     throw err;
   }
+}
+
+// Garde les photos les plus récentes seulement (les plus anciennes sont retirées du cache).
+async function trim(name, max) {
+  const c = await caches.open(name);
+  const keys = await c.keys();
+  for (let i = 0; i < keys.length - max; i++) await c.delete(keys[i]);
 }
