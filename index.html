@@ -42,7 +42,12 @@ h1,h2,h3,.cond{font-family:"Barlow Condensed",Inter,sans-serif;font-weight:700;l
 .leaflet-control-attribution a{color:#ffd1e0}
 .zlow .town{background:rgba(6,10,27,.74);border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:3px 7px;font-size:12.5px;text-shadow:none;pointer-events:auto;cursor:pointer}
 .town.country{font-style:italic;font-weight:600;color:#e3e9ff}
-.town{color:#fff;font:700 15px/1 "Barlow Condensed",sans-serif;text-shadow:0 0 3px #060a1b,0 0 6px #060a1b,0 0 10px #060a1b;white-space:nowrap;pointer-events:none;transform:translate(-50%,-50%)}
+.town i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:1px;box-shadow:0 0 0 1.5px rgba(0,0,0,.55)}
+body.day{--sea:#015b8e}
+.day .town{color:#151a33;text-shadow:0 0 3px #fff,0 0 6px #fff,0 0 10px #fff}
+.day .town.country{color:#26305a}
+.day .zlow .town{background:rgba(255,255,255,.88);border-color:rgba(21,26,51,.18);text-shadow:none}
+.town{width:max-content;color:#fff;font:700 15px/1 "Barlow Condensed",sans-serif;text-shadow:0 0 3px #060a1b,0 0 6px #060a1b,0 0 10px #060a1b;white-space:nowrap;pointer-events:none;transform:translate(-50%,-50%)}
 
 /* top bar */
 .bar{position:fixed;z-index:20;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 10px) max(env(safe-area-inset-right),10px) 0 max(env(safe-area-inset-left),10px);display:grid;gap:8px;pointer-events:none}
@@ -175,7 +180,7 @@ a.btn{text-decoration:none;color:inherit}
 .viewer p{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom));margin:0;padding:6px 12px;border-radius:999px;background:rgba(10,12,22,.7);color:#dfe3ee;font-size:13px;white-space:nowrap;pointer-events:none;transition:opacity .3s}
 .viewer.zoomed p{opacity:0}
 .zchip{padding:0;gap:0;overflow:hidden}
-.zchip[hidden],.zchip button[hidden],.zbanner[hidden],.ptabs button[hidden]{display:none}
+.zchip[hidden],.zchip button[hidden],.zbanner[hidden],.ptabs button[hidden],.tog[hidden]{display:none}
 .zchip button{height:100%;border:0;background:none;font:inherit;color:inherit;display:inline-flex;align-items:center;gap:7px;padding:0 13px}
 .zchip svg{flex:none}
 .zchip.on{background:var(--ink);color:var(--bg)}
@@ -282,6 +287,8 @@ a.btn{text-decoration:none;color:inherit}
     <div class="meter"><i id="gBar"></i></div>
     <label class="tog"><input type="checkbox" id="hideFound"> Masquer ce que j'ai déjà trouvé</label>
     <label class="tog"><input type="checkbox" id="rotMap"> Carte orientée comme dans le jeu (20°)</label>
+    <label class="tog" id="dayTog" hidden><input type="checkbox" id="dayMap"> Carte claire (style jour)</label>
+    <label class="tog"><input type="checkbox" id="zBorders"> Limites des zones en couleur</label>
     <label class="tog"><input type="checkbox" id="onlyCodes"> Seulement les points avec un code (coffres, portes…)</label>
     <div class="opts">
       <button type="button" data-preset="collect">Tout sauf les lieux</button>
@@ -624,7 +631,10 @@ setInterval(() => { if (document.visibilityState === 'visible' && cfg.main && !s
 
 /* ---------- map ---------- */
 let map, renderer, markers = [], onMap, layer, ring, radiusNow = 0, cur = -1;
-let enabled = new Set(), hideFound = false, rotOn = true, onlyCodes = false;
+let enabled = new Set(), hideFound = false, rotOn = true, onlyCodes = false, dayOn = false, bordersOn = true, borderLayer = null, lineRenderer = null;
+// Style jour : liste des morceaux de carte (null = style non disponible dans cette version)
+const HAVE_D = new Set('0/0_0 0/0_1 0/1_0 0/1_1 1/0_1 1/0_2 1/1_0 1/1_1 1/1_2 1/2_1 1/2_2 2/1_2 2/1_3 2/1_4 2/1_5 2/2_1 2/2_2 2/2_3 2/2_4 2/2_5 2/3_1 2/3_2 2/3_3 2/3_4 2/3_5 2/4_2 2/4_3 2/4_4 3/3_10 3/3_11 3/3_5 3/3_6 3/3_7 3/3_8 3/4_10 3/4_11 3/4_4 3/4_5 3/4_6 3/4_7 3/4_8 3/4_9 3/5_10 3/5_11 3/5_3 3/5_4 3/5_5 3/5_6 3/5_7 3/5_8 3/5_9 3/6_10 3/6_11 3/6_3 3/6_4 3/6_5 3/6_6 3/6_7 3/6_8 3/6_9 3/7_10 3/7_11 3/7_3 3/7_4 3/7_5 3/7_6 3/7_7 3/7_8 3/7_9 3/8_4 3/8_5 3/8_6 3/8_7 3/8_8 3/8_9 3/9_6 3/9_7 3/9_8 4/10_10 4/10_11 4/10_12 4/10_13 4/10_14 4/10_15 4/10_16 4/10_17 4/10_18 4/10_19 4/10_20 4/10_21 4/10_22 4/10_23 4/10_6 4/10_7 4/10_8 4/10_9 4/11_10 4/11_11 4/11_12 4/11_13 4/11_14 4/11_15 4/11_16 4/11_17 4/11_18 4/11_19 4/11_20 4/11_21 4/11_22 4/11_23 4/11_6 4/11_7 4/11_8 4/11_9 4/12_10 4/12_11 4/12_12 4/12_13 4/12_14 4/12_15 4/12_16 4/12_17 4/12_18 4/12_19 4/12_20 4/12_21 4/12_22 4/12_23 4/12_6 4/12_7 4/12_8 4/12_9 4/13_10 4/13_11 4/13_12 4/13_13 4/13_14 4/13_15 4/13_16 4/13_17 4/13_18 4/13_19 4/13_20 4/13_21 4/13_22 4/13_23 4/13_6 4/13_7 4/13_8 4/13_9 4/14_10 4/14_11 4/14_12 4/14_13 4/14_14 4/14_15 4/14_16 4/14_17 4/14_18 4/14_19 4/14_20 4/14_21 4/14_22 4/14_6 4/14_7 4/14_8 4/14_9 4/15_10 4/15_11 4/15_12 4/15_13 4/15_14 4/15_15 4/15_16 4/15_17 4/15_18 4/15_19 4/15_20 4/15_7 4/15_8 4/15_9 4/16_10 4/16_11 4/16_12 4/16_13 4/16_14 4/16_15 4/16_16 4/16_17 4/16_18 4/16_9 4/17_12 4/17_13 4/17_14 4/17_15 4/17_16 4/17_17 4/17_18 4/18_13 4/18_14 4/18_15 4/18_16 4/18_17 4/6_11 4/6_12 4/6_13 4/6_14 4/7_10 4/7_11 4/7_12 4/7_13 4/7_14 4/7_15 4/7_16 4/7_21 4/7_22 4/8_10 4/8_11 4/8_12 4/8_13 4/8_14 4/8_15 4/8_16 4/8_19 4/8_20 4/8_21 4/8_22 4/8_23 4/9_10 4/9_11 4/9_12 4/9_13 4/9_14 4/9_15 4/9_16 4/9_17 4/9_18 4/9_19 4/9_20 4/9_21 4/9_22 4/9_23 4/9_8 4/9_9 5/12_26 5/12_27 5/13_23 5/13_24 5/13_25 5/13_26 5/13_27 5/13_28 5/13_29 5/14_22 5/14_23 5/14_24 5/14_25 5/14_26 5/14_27 5/14_28 5/14_29 5/14_30 5/14_31 5/14_32 5/14_33 5/14_43 5/14_44 5/15_20 5/15_21 5/15_22 5/15_23 5/15_24 5/15_25 5/15_26 5/15_27 5/15_28 5/15_29 5/15_30 5/15_31 5/15_32 5/15_33 5/15_42 5/15_43 5/15_44 5/15_45 5/16_20 5/16_21 5/16_22 5/16_23 5/16_24 5/16_25 5/16_26 5/16_27 5/16_28 5/16_30 5/16_31 5/16_32 5/16_33 5/16_41 5/16_42 5/16_43 5/16_44 5/16_45 5/16_46 5/17_19 5/17_20 5/17_21 5/17_22 5/17_23 5/17_24 5/17_25 5/17_26 5/17_27 5/17_28 5/17_29 5/17_30 5/17_31 5/17_32 5/17_33 5/17_34 5/17_39 5/17_40 5/17_42 5/17_43 5/17_44 5/17_45 5/17_46 5/18_17 5/18_18 5/18_19 5/18_20 5/18_21 5/18_22 5/18_23 5/18_24 5/18_25 5/18_26 5/18_27 5/18_28 5/18_29 5/18_30 5/18_31 5/18_32 5/18_33 5/18_34 5/18_35 5/18_36 5/18_37 5/18_39 5/18_40 5/18_42 5/18_43 5/18_44 5/18_45 5/18_46 5/19_16 5/19_17 5/19_18 5/19_19 5/19_20 5/19_21 5/19_22 5/19_23 5/19_24 5/19_25 5/19_26 5/19_27 5/19_28 5/19_29 5/19_30 5/19_31 5/19_32 5/19_33 5/19_34 5/19_35 5/19_36 5/19_37 5/19_40 5/19_41 5/19_42 5/19_43 5/19_44 5/19_45 5/19_46 5/20_15 5/20_16 5/20_17 5/20_18 5/20_19 5/20_20 5/20_21 5/20_22 5/20_23 5/20_24 5/20_25 5/20_26 5/20_27 5/20_28 5/20_29 5/20_30 5/20_31 5/20_32 5/20_33 5/20_34 5/20_35 5/20_36 5/20_37 5/20_38 5/20_40 5/20_41 5/20_42 5/20_43 5/20_44 5/20_45 5/20_46 5/21_13 5/21_14 5/21_15 5/21_16 5/21_17 5/21_18 5/21_19 5/21_20 5/21_21 5/21_22 5/21_23 5/21_24 5/21_25 5/21_26 5/21_27 5/21_28 5/21_29 5/21_30 5/21_31 5/21_32 5/21_33 5/21_34 5/21_35 5/21_36 5/21_37 5/21_38 5/21_39 5/21_40 5/21_43 5/21_44 5/21_45 5/21_46 5/22_13 5/22_14 5/22_15 5/22_16 5/22_17 5/22_18 5/22_19 5/22_20 5/22_21 5/22_22 5/22_23 5/22_24 5/22_25 5/22_26 5/22_27 5/22_28 5/22_29 5/22_30 5/22_31 5/22_32 5/22_33 5/22_34 5/22_35 5/22_36 5/22_37 5/22_38 5/22_39 5/22_40 5/22_41 5/22_44 5/22_45 5/22_46 5/22_47 5/23_13 5/23_14 5/23_15 5/23_16 5/23_17 5/23_18 5/23_19 5/23_20 5/23_21 5/23_22 5/23_23 5/23_24 5/23_25 5/23_26 5/23_27 5/23_28 5/23_29 5/23_30 5/23_31 5/23_32 5/23_33 5/23_34 5/23_35 5/23_36 5/23_37 5/23_38 5/23_39 5/23_40 5/23_41 5/23_42 5/23_43 5/23_44 5/23_45 5/23_46 5/23_47 5/23_48 5/24_13 5/24_14 5/24_15 5/24_16 5/24_17 5/24_18 5/24_19 5/24_20 5/24_21 5/24_22 5/24_23 5/24_24 5/24_25 5/24_26 5/24_27 5/24_28 5/24_29 5/24_30 5/24_31 5/24_32 5/24_33 5/24_34 5/24_35 5/24_36 5/24_37 5/24_38 5/24_39 5/24_40 5/24_41 5/24_42 5/24_43 5/24_44 5/24_45 5/24_46 5/24_47 5/24_48 5/25_13 5/25_14 5/25_15 5/25_16 5/25_17 5/25_18 5/25_19 5/25_20 5/25_21 5/25_22 5/25_23 5/25_24 5/25_25 5/25_26 5/25_27 5/25_28 5/25_29 5/25_30 5/25_31 5/25_32 5/25_33 5/25_34 5/25_35 5/25_36 5/25_37 5/25_38 5/25_39 5/25_40 5/25_41 5/25_42 5/25_43 5/25_44 5/25_45 5/25_46 5/25_47 5/25_48 5/26_13 5/26_14 5/26_15 5/26_16 5/26_17 5/26_18 5/26_19 5/26_20 5/26_21 5/26_22 5/26_23 5/26_24 5/26_25 5/26_26 5/26_27 5/26_28 5/26_29 5/26_30 5/26_31 5/26_32 5/26_33 5/26_34 5/26_35 5/26_36 5/26_37 5/26_38 5/26_39 5/26_40 5/26_41 5/26_42 5/26_43 5/26_44 5/26_45 5/26_46 5/27_13 5/27_14 5/27_15 5/27_16 5/27_17 5/27_18 5/27_19 5/27_20 5/27_21 5/27_22 5/27_23 5/27_24 5/27_25 5/27_26 5/27_27 5/27_28 5/27_29 5/27_30 5/27_31 5/27_32 5/27_33 5/27_34 5/27_35 5/27_36 5/27_37 5/27_38 5/27_39 5/27_40 5/27_41 5/27_42 5/27_43 5/27_44 5/27_45 5/28_13 5/28_14 5/28_15 5/28_16 5/28_17 5/28_18 5/28_19 5/28_20 5/28_21 5/28_22 5/28_23 5/28_24 5/28_25 5/28_26 5/28_27 5/28_28 5/28_29 5/28_30 5/28_31 5/28_32 5/28_33 5/28_34 5/28_35 5/28_36 5/28_37 5/28_38 5/28_39 5/28_40 5/28_41 5/28_42 5/28_43 5/28_44 5/28_46 5/29_13 5/29_14 5/29_15 5/29_16 5/29_17 5/29_18 5/29_19 5/29_20 5/29_21 5/29_22 5/29_23 5/29_24 5/29_25 5/29_26 5/29_27 5/29_28 5/29_29 5/29_30 5/29_31 5/29_32 5/29_33 5/29_34 5/29_35 5/29_36 5/29_37 5/29_38 5/29_39 5/29_40 5/29_41 5/29_42 5/29_43 5/29_46 5/29_47 5/30_14 5/30_15 5/30_16 5/30_17 5/30_18 5/30_19 5/30_20 5/30_21 5/30_22 5/30_23 5/30_24 5/30_25 5/30_26 5/30_27 5/30_28 5/30_29 5/30_30 5/30_31 5/30_32 5/30_33 5/30_34 5/30_35 5/30_36 5/30_37 5/30_38 5/30_39 5/30_40 5/30_41 5/31_18 5/31_19 5/31_20 5/31_21 5/31_22 5/31_23 5/31_24 5/31_25 5/31_26 5/31_27 5/31_28 5/31_29 5/31_30 5/31_31 5/31_32 5/31_33 5/31_34 5/31_35 5/31_36 5/31_37 5/31_38 5/31_39 5/32_18 5/32_19 5/32_20 5/32_21 5/32_22 5/32_23 5/32_24 5/32_25 5/32_26 5/32_27 5/32_28 5/32_29 5/32_30 5/32_31 5/32_32 5/32_33 5/32_34 5/32_35 5/32_36 5/32_37 5/33_18 5/33_19 5/33_20 5/33_21 5/33_22 5/33_23 5/33_24 5/33_25 5/33_26 5/33_27 5/33_28 5/33_29 5/33_30 5/33_31 5/33_32 5/33_33 5/33_34 5/33_35 5/33_36 5/34_19 5/34_24 5/34_25 5/34_26 5/34_27 5/34_28 5/34_29 5/34_30 5/34_31 5/34_32 5/34_33 5/34_34 5/34_35 5/34_36 5/35_25 5/35_26 5/35_27 5/35_28 5/35_29 5/35_30 5/35_31 5/35_32 5/35_33 5/35_34 5/35_35 5/36_27 5/36_28 5/36_29 5/36_30 5/36_31 5/36_32 5/36_33 5/36_34 5/36_35 5/37_29 5/37_30 5/37_33 5/37_34 5/37_35'.split(' '));
+const TP = () => dayOn && HAVE_D ? 'td/' : 't/';
 let zones = [], zone = -1, zoneLayer = null, zoneRenderer = null, OV = [197, 201, 604, 776], zTot = [], zFound = [];
 const R = z => z < 1 ? 2.5 : z < 2 ? 3.5 : z < 3 ? 5 : z < 4 ? 9.5 : z < 5 ? 11.5 : 13;
 let HAVE_LIST = [];
@@ -693,26 +703,27 @@ function initMap(towns) {
   map.attributionControl.setPrefix(false);
   if (matchMedia('(min-width:900px)').matches) L.control.zoom({ position: 'bottomleft', zoomInTitle: 'Zoomer', zoomOutTitle: 'Dézoomer' }).addTo(map);
   const HAVE = new Set('0/0_0 0/0_1 0/1_0 0/1_1 1/0_1 1/0_2 1/1_0 1/1_1 1/1_2 1/2_1 1/2_2 2/1_2 2/1_3 2/1_4 2/1_5 2/2_1 2/2_2 2/2_3 2/2_4 2/2_5 2/3_1 2/3_2 2/3_3 2/3_4 2/3_5 2/4_2 2/4_3 2/4_4 3/12_9 3/3_10 3/3_11 3/3_5 3/3_6 3/3_7 3/3_8 3/4_10 3/4_11 3/4_4 3/4_5 3/4_6 3/4_7 3/4_8 3/4_9 3/5_10 3/5_11 3/5_3 3/5_4 3/5_5 3/5_6 3/5_7 3/5_8 3/5_9 3/6_10 3/6_11 3/6_3 3/6_4 3/6_5 3/6_6 3/6_7 3/6_8 3/6_9 3/7_10 3/7_11 3/7_3 3/7_4 3/7_5 3/7_6 3/7_7 3/7_8 3/7_9 3/8_4 3/8_5 3/8_6 3/8_7 3/8_8 3/8_9 3/9_6 3/9_7 3/9_8 4/10_10 4/10_11 4/10_12 4/10_13 4/10_14 4/10_15 4/10_16 4/10_17 4/10_18 4/10_19 4/10_20 4/10_21 4/10_22 4/10_23 4/10_7 4/10_8 4/10_9 4/11_10 4/11_11 4/11_12 4/11_13 4/11_14 4/11_15 4/11_16 4/11_17 4/11_18 4/11_19 4/11_20 4/11_21 4/11_22 4/11_23 4/11_6 4/11_7 4/11_8 4/11_9 4/12_10 4/12_11 4/12_12 4/12_13 4/12_14 4/12_15 4/12_16 4/12_17 4/12_18 4/12_19 4/12_20 4/12_21 4/12_22 4/12_23 4/12_6 4/12_7 4/12_8 4/12_9 4/13_10 4/13_11 4/13_12 4/13_13 4/13_14 4/13_15 4/13_16 4/13_17 4/13_18 4/13_19 4/13_20 4/13_21 4/13_22 4/13_23 4/13_6 4/13_7 4/13_8 4/13_9 4/14_10 4/14_11 4/14_12 4/14_13 4/14_14 4/14_15 4/14_16 4/14_17 4/14_18 4/14_19 4/14_20 4/14_21 4/14_22 4/14_6 4/14_7 4/14_8 4/14_9 4/15_10 4/15_11 4/15_12 4/15_13 4/15_14 4/15_15 4/15_16 4/15_17 4/15_18 4/15_19 4/15_20 4/15_23 4/15_7 4/15_8 4/15_9 4/16_10 4/16_11 4/16_12 4/16_13 4/16_14 4/16_15 4/16_16 4/16_17 4/16_18 4/16_20 4/16_9 4/17_12 4/17_13 4/17_14 4/17_15 4/17_16 4/17_17 4/18_13 4/18_14 4/18_15 4/18_16 4/18_17 4/20_20 4/20_7 4/21_20 4/21_24 4/22_17 4/23_6 4/24_17 4/24_18 4/24_23 4/24_5 4/5_18 4/5_21 4/5_22 4/6_10 4/6_11 4/6_12 4/6_13 4/6_14 4/6_5 4/7_10 4/7_11 4/7_12 4/7_13 4/7_14 4/7_15 4/7_16 4/7_21 4/7_22 4/8_10 4/8_11 4/8_12 4/8_13 4/8_14 4/8_15 4/8_16 4/8_19 4/8_20 4/8_21 4/8_22 4/8_23 4/9_10 4/9_11 4/9_12 4/9_13 4/9_14 4/9_15 4/9_16 4/9_17 4/9_18 4/9_19 4/9_20 4/9_21 4/9_22 4/9_23 4/9_8 4/9_9 5/12_26 5/12_27 5/13_23 5/13_24 5/13_25 5/13_26 5/13_27 5/13_28 5/14_22 5/14_23 5/14_24 5/14_25 5/14_26 5/14_27 5/14_28 5/14_29 5/14_30 5/14_31 5/14_32 5/14_33 5/14_43 5/14_44 5/15_20 5/15_21 5/15_22 5/15_23 5/15_24 5/15_25 5/15_26 5/15_27 5/15_28 5/15_29 5/15_30 5/15_31 5/15_32 5/15_33 5/15_42 5/15_43 5/15_44 5/15_45 5/16_20 5/16_21 5/16_22 5/16_23 5/16_24 5/16_25 5/16_26 5/16_27 5/16_28 5/16_30 5/16_31 5/16_32 5/16_33 5/16_42 5/16_43 5/16_44 5/16_45 5/16_46 5/17_20 5/17_21 5/17_22 5/17_23 5/17_24 5/17_25 5/17_26 5/17_27 5/17_28 5/17_29 5/17_30 5/17_31 5/17_32 5/17_33 5/17_39 5/17_40 5/17_42 5/17_43 5/17_44 5/17_45 5/17_46 5/18_18 5/18_19 5/18_20 5/18_21 5/18_22 5/18_23 5/18_24 5/18_25 5/18_26 5/18_27 5/18_28 5/18_29 5/18_30 5/18_31 5/18_32 5/18_33 5/18_34 5/18_35 5/18_36 5/18_37 5/18_39 5/18_42 5/18_43 5/18_44 5/18_45 5/18_46 5/19_16 5/19_17 5/19_18 5/19_19 5/19_20 5/19_21 5/19_22 5/19_23 5/19_24 5/19_25 5/19_26 5/19_27 5/19_28 5/19_29 5/19_30 5/19_31 5/19_32 5/19_33 5/19_34 5/19_35 5/19_36 5/19_37 5/19_40 5/19_41 5/19_42 5/19_43 5/19_44 5/19_45 5/19_46 5/20_15 5/20_16 5/20_17 5/20_18 5/20_19 5/20_20 5/20_21 5/20_22 5/20_23 5/20_24 5/20_25 5/20_26 5/20_27 5/20_28 5/20_29 5/20_30 5/20_31 5/20_32 5/20_33 5/20_34 5/20_35 5/20_36 5/20_37 5/20_38 5/20_40 5/20_41 5/20_42 5/20_43 5/20_44 5/20_45 5/20_46 5/21_13 5/21_14 5/21_15 5/21_16 5/21_17 5/21_18 5/21_19 5/21_20 5/21_21 5/21_22 5/21_23 5/21_24 5/21_25 5/21_26 5/21_27 5/21_28 5/21_29 5/21_30 5/21_31 5/21_32 5/21_33 5/21_34 5/21_35 5/21_36 5/21_37 5/21_38 5/21_39 5/21_40 5/21_43 5/21_44 5/21_45 5/21_46 5/22_13 5/22_14 5/22_15 5/22_16 5/22_17 5/22_18 5/22_19 5/22_20 5/22_21 5/22_22 5/22_23 5/22_24 5/22_25 5/22_26 5/22_27 5/22_28 5/22_29 5/22_30 5/22_31 5/22_32 5/22_33 5/22_34 5/22_35 5/22_36 5/22_37 5/22_38 5/22_39 5/22_40 5/22_41 5/22_44 5/22_45 5/22_46 5/23_13 5/23_14 5/23_15 5/23_16 5/23_17 5/23_18 5/23_19 5/23_20 5/23_21 5/23_22 5/23_23 5/23_24 5/23_25 5/23_26 5/23_27 5/23_28 5/23_29 5/23_30 5/23_31 5/23_32 5/23_33 5/23_34 5/23_35 5/23_36 5/23_37 5/23_38 5/23_39 5/23_40 5/23_41 5/23_42 5/23_44 5/23_45 5/23_46 5/24_13 5/24_14 5/24_15 5/24_16 5/24_17 5/24_18 5/24_19 5/24_20 5/24_21 5/24_22 5/24_23 5/24_24 5/24_25 5/24_26 5/24_27 5/24_28 5/24_29 5/24_30 5/24_31 5/24_32 5/24_33 5/24_34 5/24_35 5/24_36 5/24_37 5/24_38 5/24_39 5/24_40 5/24_41 5/24_42 5/24_43 5/24_44 5/24_45 5/24_46 5/24_47 5/25_13 5/25_14 5/25_15 5/25_16 5/25_17 5/25_18 5/25_19 5/25_20 5/25_21 5/25_22 5/25_23 5/25_24 5/25_25 5/25_26 5/25_27 5/25_28 5/25_29 5/25_30 5/25_31 5/25_32 5/25_33 5/25_34 5/25_35 5/25_36 5/25_37 5/25_38 5/25_39 5/25_40 5/25_41 5/25_42 5/25_43 5/25_44 5/25_45 5/25_46 5/25_47 5/25_48 5/26_13 5/26_14 5/26_15 5/26_16 5/26_17 5/26_18 5/26_19 5/26_20 5/26_21 5/26_22 5/26_23 5/26_24 5/26_25 5/26_26 5/26_27 5/26_28 5/26_29 5/26_30 5/26_31 5/26_32 5/26_33 5/26_34 5/26_35 5/26_36 5/26_37 5/26_38 5/26_39 5/26_40 5/26_41 5/26_42 5/26_43 5/26_44 5/26_45 5/26_46 5/27_13 5/27_14 5/27_15 5/27_16 5/27_17 5/27_18 5/27_19 5/27_20 5/27_21 5/27_22 5/27_23 5/27_24 5/27_25 5/27_26 5/27_27 5/27_28 5/27_29 5/27_30 5/27_31 5/27_32 5/27_33 5/27_34 5/27_35 5/27_36 5/27_37 5/27_38 5/27_39 5/27_40 5/27_41 5/27_42 5/27_43 5/27_44 5/27_45 5/28_13 5/28_14 5/28_15 5/28_16 5/28_17 5/28_18 5/28_19 5/28_20 5/28_21 5/28_22 5/28_23 5/28_24 5/28_25 5/28_26 5/28_27 5/28_28 5/28_29 5/28_30 5/28_31 5/28_32 5/28_33 5/28_34 5/28_35 5/28_36 5/28_37 5/28_38 5/28_39 5/28_40 5/28_41 5/28_42 5/28_43 5/28_44 5/29_13 5/29_14 5/29_15 5/29_16 5/29_17 5/29_18 5/29_19 5/29_20 5/29_21 5/29_22 5/29_23 5/29_24 5/29_25 5/29_26 5/29_27 5/29_28 5/29_29 5/29_30 5/29_31 5/29_32 5/29_33 5/29_34 5/29_35 5/29_36 5/29_37 5/29_38 5/29_39 5/29_40 5/29_41 5/29_42 5/29_43 5/29_46 5/29_47 5/30_15 5/30_16 5/30_17 5/30_18 5/30_19 5/30_20 5/30_21 5/30_22 5/30_23 5/30_24 5/30_25 5/30_26 5/30_27 5/30_28 5/30_29 5/30_30 5/30_31 5/30_32 5/30_33 5/30_34 5/30_35 5/30_36 5/30_37 5/30_38 5/30_39 5/30_40 5/30_41 5/31_18 5/31_19 5/31_20 5/31_21 5/31_22 5/31_23 5/31_24 5/31_25 5/31_26 5/31_27 5/31_28 5/31_29 5/31_30 5/31_31 5/31_32 5/31_33 5/31_34 5/31_35 5/31_36 5/31_37 5/31_38 5/32_18 5/32_19 5/32_20 5/32_21 5/32_22 5/32_23 5/32_24 5/32_25 5/32_26 5/32_27 5/32_28 5/32_29 5/32_30 5/32_31 5/32_32 5/32_33 5/32_34 5/32_35 5/32_36 5/32_37 5/33_18 5/33_19 5/33_20 5/33_21 5/33_22 5/33_23 5/33_24 5/33_25 5/33_26 5/33_27 5/33_28 5/33_29 5/33_30 5/33_31 5/33_32 5/33_33 5/33_34 5/33_35 5/33_36 5/34_24 5/34_25 5/34_26 5/34_27 5/34_28 5/34_29 5/34_30 5/34_31 5/34_32 5/34_33 5/34_34 5/34_35 5/34_36 5/35_25 5/35_26 5/35_27 5/35_28 5/35_29 5/35_30 5/35_31 5/35_32 5/35_33 5/35_34 5/35_35 5/36_27 5/36_28 5/36_29 5/36_30 5/36_31 5/36_32 5/36_33 5/36_34 5/36_35 5/37_29 5/37_30 5/37_34 5/37_35'.split(' '));
-  HAVE_LIST = [...HAVE, 'ov'];
+  const HV = dayOn && HAVE_D ? HAVE_D : HAVE, BG = dayOn && HAVE_D ? '#015b8e' : '#060a1b';
+  HAVE_LIST = [...HV].map(k => TP() + k).concat('t/ov');
   const Tiles = L.TileLayer.extend({ createTile(c, done) {
-    if (HAVE.has(c.z + '/' + c.x + '_' + c.y)) return L.TileLayer.prototype.createTile.call(this, c, done);
+    if (HV.has(c.z + '/' + c.x + '_' + c.y)) return L.TileLayer.prototype.createTile.call(this, c, done);
     const d = document.createElement('div'); setTimeout(() => done(null, d), 0); return d;
   } });
   const ATTR = '<a href="https://github.com/fbritoferreira/gta6" target="_blank" rel="noopener">Open GTA 6 Map</a> · CC BY 4.0';
-  if (!rotOn) new Tiles('t/{z}/{x}_{y}.webp', { tileSize: 512, minZoom: -1, maxZoom: 7, minNativeZoom: 0, maxNativeZoom: MAXN, noWrap: true, bounds, attribution: ATTR }).addTo(map);
+  if (!rotOn) new Tiles(TP() + '{z}/{x}_{y}.webp', { tileSize: 512, minZoom: -1, maxZoom: 7, minNativeZoom: 0, maxNativeZoom: MAXN, noWrap: true, bounds, attribution: ATTR }).addTo(map);
   else {
     const cache = new Map();
     const img = k => {
       let pr = cache.get(k);
       if (pr) { cache.delete(k); cache.set(k, pr); return pr; }
-      pr = new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = 't/' + k + '.webp'; });
+      pr = new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = TP() + k + '.webp'; });
       cache.set(k, pr); if (cache.size > 36) cache.delete(cache.keys().next().value);
       return pr;
     };
     const RotTiles = L.GridLayer.extend({ createTile(c, done) {
       const T = 512, dpr = Math.min(2, window.devicePixelRatio || 1), cv = document.createElement('canvas');
       cv.width = cv.height = T * dpr;
-      const ctx = cv.getContext('2d'); ctx.fillStyle = '#060a1b'; ctx.fillRect(0, 0, cv.width, cv.height);
+      const ctx = cv.getContext('2d'); ctx.fillStyle = BG; ctx.fillRect(0, 0, cv.width, cv.height);
       const zn = Math.max(0, Math.min(MAXN, c.z)), k = Math.pow(2, c.z - zn), sc = Math.pow(2, c.z);
       const sx = CX * sc, sy = -CY * sc, ox = c.x * T, oy = c.y * T, co = Math.cos(PHI), si = Math.sin(PHI);
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -721,7 +732,7 @@ function initMap(towns) {
         x0 = Math.min(x0, X); y0 = Math.min(y0, Y); x1 = Math.max(x1, X); y1 = Math.max(y1, Y);
       }
       const S = T * k, keys = [];
-      for (let i = Math.floor(x0 / S); i <= Math.floor(x1 / S); i++) for (let j = Math.floor(y0 / S); j <= Math.floor(y1 / S); j++) { const key = zn + '/' + i + '_' + j; if (HAVE.has(key)) keys.push([i, j, key]); }
+      for (let i = Math.floor(x0 / S); i <= Math.floor(x1 / S); i++) for (let j = Math.floor(y0 / S); j <= Math.floor(y1 / S); j++) { const key = zn + '/' + i + '_' + j; if (HV.has(key)) keys.push([i, j, key]); }
       if (!keys.length) { setTimeout(() => done(null, cv), 0); return cv; }
       Promise.all(keys.map(([i, j, key]) => img(key).then(im => [i, j, im]))).then(list => {
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.translate(-ox, -oy); ctx.translate(sx, sy); ctx.rotate(PHI); ctx.translate(-sx, -sy);
@@ -733,6 +744,8 @@ function initMap(towns) {
     } });
     new RotTiles({ tileSize: 512, minZoom: -1, maxZoom: 7, attribution: ATTR }).addTo(map);
   }
+  map.createPane('zoneLines').style.zIndex = 340;
+  lineRenderer = L.canvas({ pane: 'zoneLines', padding: 0.4 });
   map.createPane('zonePane').style.zIndex = 350;
   zoneRenderer = L.svg({ pane: 'zonePane', padding: 0.5 });
   renderer = L.canvas({ padding: 0.4, tolerance: 8 });
@@ -742,7 +755,7 @@ function initMap(towns) {
   markers = locs.map((r, i) => { const m = new IconMarker([-r[3], r[2]], Object.assign({ renderer, radius: radiusNow, bubblingMouseEvents: false, ci: r[1], code: r[10] || '' }, styleFor(i))); m.on('click', () => openCard(i, false)); return m; });
   ring = L.circleMarker([0, 0], { renderer, radius: 14, color: '#fff', weight: 3, fill: false, interactive: false });
   towns.forEach(t => {
-    const m = L.marker([-t.y, t.x], { interactive: t.i != null, keyboard: false, icon: L.divIcon({ className: '', html: '<div class="town' + (t.c ? ' country' : '') + '">' + esc(t.n) + '</div>', iconSize: [0, 0] }) }).addTo(map);
+    const m = L.marker([-t.y, t.x], { interactive: t.i != null, keyboard: false, icon: L.divIcon({ className: '', html: '<div class="town' + (t.c ? ' country' : '') + '">' + (t.col ? '<i style="background:' + t.col + '"></i>' : '') + esc(t.n) + '</div>', iconSize: [0, 0] }) }).addTo(map);
     if (t.i != null) m.on('click', () => { if (map.getZoom() < 1.5) pickZone(t.i); });
   });
   const ui = lsGet(LS_UI);
@@ -760,7 +773,7 @@ function initMap(towns) {
 }
 function saveUi() {
   const c = map ? map.getCenter() : null;
-  lsSet(LS_UI, { off: cats.filter((x, i) => !enabled.has(i)).map(x => x.k), hide: hideFound, rot: rotOn, codes: onlyCodes, zone: zone >= 0 && zones[zone] ? zones[zone].n : '', view: c ? { lat: c.lat, lng: c.lng, z: map.getZoom() } : null });
+  lsSet(LS_UI, { off: cats.filter((x, i) => !enabled.has(i)).map(x => x.k), hide: hideFound, rot: rotOn, codes: onlyCodes, day: dayOn, borders: bordersOn, zone: zone >= 0 && zones[zone] ? zones[zone].n : '', view: c ? { lat: c.lat, lng: c.lng, z: map.getZoom() } : null });
 }
 
 /* ---------- counts & panel ---------- */
@@ -802,7 +815,7 @@ function buildPanel() {
   }).join('');
   syncChecks();
 }
-function syncChecks() { cats.forEach((c, i) => { const cb = document.getElementById('cb' + i); if (cb) cb.checked = enabled.has(i); }); $('#hideFound').checked = hideFound; $('#rotMap').checked = rotOn; $('#onlyCodes').checked = onlyCodes; }
+function syncChecks() { cats.forEach((c, i) => { const cb = document.getElementById('cb' + i); if (cb) cb.checked = enabled.has(i); }); $('#hideFound').checked = hideFound; $('#rotMap').checked = rotOn; $('#onlyCodes').checked = onlyCodes; $('#dayMap').checked = dayOn; $('#zBorders').checked = bordersOn; }
 function filtersChanged() { syncChecks(); refreshLayer(); saveUi(); }
 $('#groups').addEventListener('change', e => { const i = +e.target.dataset.i; if (e.target.dataset.i == null) return; if (e.target.checked) enabled.add(i); else enabled.delete(i); filtersChanged(); });
 $('#groups').addEventListener('click', e => {
@@ -820,6 +833,8 @@ document.querySelector('.opts').addEventListener('click', e => {
 });
 $('#hideFound').addEventListener('change', e => { hideFound = e.target.checked; filtersChanged(); });
 $('#rotMap').addEventListener('change', e => { rotOn = e.target.checked; saveUi(); location.reload(); });
+$('#dayMap').addEventListener('change', e => { dayOn = e.target.checked; saveUi(); location.reload(); });
+$('#zBorders').addEventListener('change', e => { bordersOn = e.target.checked; saveUi(); drawBorders(); });
 $('#onlyCodes').addEventListener('change', e => { onlyCodes = e.target.checked; filtersChanged(); if (onlyCodes) { if (!desk()) closePanel(); toast(fmt(locs.filter(r => r[10] || r[11]).length) + ' points avec un code ou une info de code.'); } });
 
 const desk = () => matchMedia('(min-width:900px)').matches;
@@ -1096,13 +1111,35 @@ function renderZoneUi() {
     const r = c.parentNode; r.classList.toggle('on', i === zone); r.classList.toggle('done', zTot[i] > 0 && zFound[i] === zTot[i]);
   });
 }
+// Contour intérieur : chaque zone a une bande de sa couleur le long de son bord (deux zones voisines = deux bandes côte à côte)
+const InnerBand = L.Polygon.extend({
+  _updatePath() {
+    const R = this._renderer, ctx = R && R._ctx, parts = this._parts;
+    if (!R || !R._drawing || !parts || !parts.length) return;
+    ctx.beginPath();
+    for (const ring of parts) { ring.forEach((p, j) => j ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); }
+    const z = this._map.getZoom(), tint = z < 1 ? .16 : z < 2 ? .1 : z < 3 ? .05 : 0;
+    ctx.save(); ctx.clip('evenodd');
+    if (tint) { ctx.globalAlpha = tint; ctx.fillStyle = this.options.color; ctx.fill('evenodd'); }
+    ctx.globalAlpha = .95; ctx.lineJoin = 'round'; ctx.lineWidth = this.options.weight * 2; ctx.strokeStyle = this.options.color; ctx.stroke();
+    ctx.restore();
+  }
+});
+function drawBorders() {
+  if (borderLayer) { map.removeLayer(borderLayer); borderLayer = null; }
+  if (!bordersOn || !zones.length) return;
+  const ll = z => zoneRings(z).map(rg => rg.map(([x, y]) => [-y, x])), w = matchMedia('(max-width:600px)').matches ? 3.5 : 4;
+  const bands = zones.map(z => new InnerBand(ll(z), { renderer: lineRenderer, color: z.c, weight: w, interactive: false, smoothFactor: 1.5 }));
+  const lines = zones.map(z => L.polygon(ll(z), { renderer: lineRenderer, fill: false, color: dayOn ? '#3a3f5c' : '#03050d', weight: 1.4, opacity: .85, interactive: false, smoothFactor: 1.5 }));
+  borderLayer = L.layerGroup([...bands, ...lines]).addTo(map);
+}
 function drawZone() {
   if (zoneLayer) { map.removeLayer(zoneLayer); zoneLayer = null; }
   if (zone < 0 || !zones[zone]) return;
   const z = zones[zone], rings = zoneRings(z).map(rg => rg.map(([x, y]) => [-y, x]));
   const outer = [[-1700, -700], [-1700, 1700], [700, 1700], [700, -700]];
   zoneLayer = L.layerGroup([
-    L.polygon([outer, ...rings], { renderer: zoneRenderer, stroke: false, fillColor: '#03050d', fillOpacity: .55, interactive: false }),
+    L.polygon([outer, ...rings], { renderer: zoneRenderer, stroke: false, fillColor: dayOn ? '#f3f1f8' : '#03050d', fillOpacity: dayOn ? .62 : .55, interactive: false }),
     L.polygon(rings, { renderer: zoneRenderer, fill: false, color: z.c, weight: 7, opacity: .5, interactive: false }),
     L.polygon(rings, { renderer: zoneRenderer, fill: false, color: '#fff', weight: 2, opacity: .95, interactive: false })
   ]).addTo(map);
@@ -1187,7 +1224,8 @@ async function renderOffline() {
   const st = $('#offlineSt');
   if (!('caches' in window) || !HAVE_LIST.length) { st.textContent = ''; return; }
   try {
-    const c = await caches.open('leonida-tiles'); const keys = await c.keys();
+    const c = await caches.open('leonida-tiles'), want = new Set(HAVE_LIST.map(k => new URL(k + '.webp', location.href).href));
+    const keys = (await c.keys()).filter(r => want.has(r.url));
     st.textContent = keys.length >= HAVE_LIST.length ? 'Toute la carte est disponible hors ligne ✓' : fmt(keys.length) + ' / ' + fmt(HAVE_LIST.length) + ' morceaux de carte gardés sur cet appareil (les zones déjà vues marchent hors ligne).';
   } catch (e) { st.textContent = ''; }
 }
@@ -1195,7 +1233,7 @@ $('#btnOffline').onclick = async () => {
   if (!('caches' in window)) { toast("Ce navigateur ne permet pas le hors ligne."); return; }
   const b = $('#btnOffline'), st = $('#offlineSt'); b.disabled = true;
   const c = await caches.open('leonida-tiles'); let done = 0, fail = 0;
-  const urls = HAVE_LIST.map(k => new URL('t/' + k + '.webp', location.href).href);
+  const urls = HAVE_LIST.map(k => new URL(k + '.webp', location.href).href);
   for (let i = 0; i < urls.length; i += 6) {
     await Promise.all(urls.slice(i, i + 6).map(async u => {
       try { if (!(await c.match(u))) { const r = await fetch(u); if (r.ok) await c.put(u, r); else fail++; } } catch (e) { fail++; }
@@ -1229,11 +1267,12 @@ fetch('data.json').then(r => { if (!r.ok) throw new Error(r.status); return r.js
   const ui = lsGet(LS_UI);
   const off = new Set(ui && Array.isArray(ui.off) ? ui.off : cats.filter(c => c.g === 'lieux').map(c => c.k));
   enabled = new Set(cats.map((c, i) => i).filter(i => !off.has(cats[i].k)));
-  hideFound = !!(ui && ui.hide); onlyCodes = !!(ui && ui.codes);
+  hideFound = !!(ui && ui.hide); onlyCodes = !!(ui && ui.codes); dayOn = !!(ui && ui.day) && !!HAVE_D; bordersOn = !(ui && ui.borders === false);
+  document.body.classList.toggle('day', dayOn); $('#dayTog').hidden = !HAVE_D;
   zone = ui && ui.zone ? zones.findIndex(z => z.n === ui.zone) : -1;
   await prepGlyphs();
-  initMap(zones.length ? zones.map((z, i) => ({ n: z.s || z.n, x: z.x, y: z.y, i, c: z.g === 'c' })) : (d.towns || []));
-  buildPanel(); buildZones(); drawZone(); refreshLayer(); renderCounts(); renderSave();
+  initMap(zones.length ? zones.map((z, i) => ({ n: z.s || z.n, x: z.x, y: z.y, i, c: z.g === 'c', col: z.c })) : (d.towns || []));
+  buildPanel(); buildZones(); drawBorders(); drawZone(); refreshLayer(); renderCounts(); renderSave();
   if (desk()) selectTab('filters');
   $('#loader').hidden = true;
   renderInstall(); renderOffline(); loadHistory();
