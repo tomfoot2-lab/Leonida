@@ -40,7 +40,8 @@ h1,h2,h3,.cond{font-family:"Barlow Condensed",Inter,sans-serif;font-weight:700;l
 .leaflet-container{background:var(--sea);font:inherit}
 .leaflet-control-attribution{font-size:11px;background:rgba(10,14,32,.75)!important;color:#c9cfe0}
 .leaflet-control-attribution a{color:#ffd1e0}
-.zlow .town{display:none}
+.zlow .town{background:rgba(6,10,27,.74);border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:3px 7px;font-size:12.5px;text-shadow:none;pointer-events:auto;cursor:pointer}
+.town.country{font-style:italic;font-weight:600;color:#e3e9ff}
 .town{color:#fff;font:700 15px/1 "Barlow Condensed",sans-serif;text-shadow:0 0 3px #060a1b,0 0 6px #060a1b,0 0 10px #060a1b;white-space:nowrap;pointer-events:none;transform:translate(-50%,-50%)}
 
 /* top bar */
@@ -66,7 +67,7 @@ h1,h2,h3,.cond{font-family:"Barlow Condensed",Inter,sans-serif;font-weight:700;l
 .pbar{width:54px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
 .pbar i{display:block;height:100%;background:var(--pink);width:0}
 @keyframes pulse{50%{opacity:.35}}
-@media(max-width:600px){.chip{height:38px;padding:0 12px;font-size:14px;gap:7px}.chips{gap:6px}.pbar{display:none}}
+@media(max-width:600px){.chip{height:38px;padding:0 11px;font-size:14px;gap:6px}.chips{gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:-4px -10px 0;padding:4px 10px 10px}.chips::-webkit-scrollbar{display:none}.chip{flex:none}.pbar{display:none}.zchip{padding:0}.zchip button{padding:0 11px}.ptabs{gap:2px}.ptabs button{padding:0 10px;font-size:18px}}
 
 /* panel */
 .panel{position:fixed;z-index:30;left:0;right:0;bottom:0;height:min(88vh,88dvh);background:var(--bg);border-radius:20px 20px 0 0;box-shadow:var(--shadow);display:flex;flex-direction:column;transform:translateY(105%);transition:transform .28s ease;padding-bottom:env(safe-area-inset-bottom)}
@@ -173,6 +174,37 @@ a.btn{text-decoration:none;color:inherit}
 .viewer .x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;width:48px;height:48px;border:0;border-radius:14px;background:rgba(255,255,255,.14);color:#fff;font-size:26px;line-height:1}
 .viewer p{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom));margin:0;padding:6px 12px;border-radius:999px;background:rgba(10,12,22,.7);color:#dfe3ee;font-size:13px;white-space:nowrap;pointer-events:none;transition:opacity .3s}
 .viewer.zoomed p{opacity:0}
+.zchip{padding:0;gap:0;overflow:hidden}
+.zchip[hidden],.zchip button[hidden],.zbanner[hidden],.ptabs button[hidden]{display:none}
+.zchip button{height:100%;border:0;background:none;font:inherit;color:inherit;display:inline-flex;align-items:center;gap:7px;padding:0 13px}
+.zchip svg{flex:none}
+.zchip.on{background:var(--ink);color:var(--bg)}
+.zchip #zTxt{max-width:34vw;overflow:hidden;text-overflow:ellipsis}
+.zchip #zClear{padding:0 12px 0 4px;font-size:20px;line-height:1;opacity:.8}
+.zhead{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.zhead h2{font-size:30px}
+.zall{height:38px;border:0;border-radius:10px;background:var(--bg2);color:var(--ink);padding:0 12px;font:600 14px/1 Inter,sans-serif}
+.zall.on{background:var(--ink);color:var(--bg)}
+.zmini{margin:10px 0 6px;border-radius:16px;overflow:hidden;background:var(--sea);aspect-ratio:var(--ar,4/5);max-height:48vh;max-height:48dvh}
+.zmini svg{display:block;width:100%;height:100%}
+.zmini .zp{fill-rule:evenodd;fill:var(--zc);fill-opacity:.26;stroke:#fff;stroke-opacity:.55;stroke-width:1;vector-effect:non-scaling-stroke;cursor:pointer;transition:fill-opacity .2s}
+.zmini.sel .zp{fill-opacity:.08}
+.zmini .zp.on{fill-opacity:.55;stroke-opacity:1;stroke-width:2.5}
+.zmini text{fill:#fff;font:700 17px "Barlow Condensed",sans-serif;text-anchor:middle;dominant-baseline:middle;paint-order:stroke;stroke:#060a1b;stroke-width:4px;stroke-linejoin:round;cursor:pointer}
+.zmini.sel text{opacity:.55}.zmini text.on{opacity:1;font-size:21px}
+.zg{font-size:22px;margin:16px 0 4px}
+.zrow{display:grid;grid-template-columns:14px 1fr auto;grid-template-rows:auto auto;column-gap:10px;row-gap:5px;align-items:center;width:100%;border:0;background:none;color:inherit;text-align:left;padding:10px 8px;border-radius:12px;font:inherit}
+.zrow>i{width:14px;height:14px;border-radius:5px;grid-row:1}
+.zrow .zn{font-weight:600;font-size:15px;min-width:0}
+.zrow .zn small{display:block;font-weight:400;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zrow .zc{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.zrow .zl{grid-column:2/4;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.zrow .zl i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),#ff8c42)}
+.zrow.on{background:var(--bg2);box-shadow:inset 0 0 0 2px var(--ink)}
+.zrow.done .zc{color:var(--tealink);font-weight:600}
+.zfoot{font-size:12px;color:var(--muted);margin-top:14px}
+.zbanner{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--bg2);border-radius:12px;padding:8px 10px;margin:0 0 12px;font-size:14px}
+.zbanner button{margin-left:auto;height:32px;border:0;border-radius:8px;background:var(--bg);color:var(--ink);padding:0 10px;font:600 13px/1 Inter,sans-serif}
 .cmt{font-size:12px;color:var(--muted);margin:0 0 8px}
 .corig summary{font-size:14px;color:var(--pinkink);cursor:pointer;min-height:32px}
 .corig p{margin:4px 0 8px;color:var(--muted);font-size:14px}
@@ -204,7 +236,8 @@ a.btn{text-decoration:none;color:inherit}
  .ptabs .close,.mob{display:none}
  .desk{display:inline-flex}
  #map{left:380px}
- .bar{left:380px;grid-template-columns:minmax(0,440px) auto;align-items:start;padding-left:14px}
+ .bar{left:380px;grid-template-columns:minmax(180px,440px) max-content;align-items:start;padding-left:14px;justify-content:start}
+ .chips{flex-wrap:nowrap}.chip{flex:none}
  .card,.card.hasphoto{left:auto;right:16px;bottom:16px;width:390px;border-radius:18px;max-height:calc(100vh - 110px)}
 }
 @media(prefers-reduced-motion:reduce){.panel{transition:none}.chip.s-saving .dot{animation:none}}
@@ -222,6 +255,7 @@ a.btn{text-decoration:none;color:inherit}
   </div>
   <div class="chips">
     <button class="chip" id="chipProg" type="button" title="Progression"><span id="chipPct">0 %</span><span class="pbar"><i id="chipBar"></i></span></button>
+    <div class="chip zchip" id="zChip" hidden><button type="button" id="zBtn" title="Choisir une zone"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg><span id="zTxt">Zones</span></button><button type="button" id="zClear" hidden aria-label="Revenir à toute la carte">×</button></div>
     <button class="chip" id="chipSave" type="button"><span class="dot"></span><span id="chipSaveTxt">Connexion…</span><span class="flag"></span></button>
     <button class="chip mob" id="chipCats" type="button">Catégories</button>
   </div>
@@ -229,11 +263,21 @@ a.btn{text-decoration:none;color:inherit}
 
 <aside class="panel" id="panel" aria-label="Catégories et sauvegarde">
   <div class="ptabs" role="tablist">
+    <button role="tab" id="tabZ" aria-selected="false" aria-controls="paneZ" type="button">Zones</button>
     <button role="tab" id="tabF" aria-selected="true" aria-controls="paneF" type="button">Catégories</button>
     <button role="tab" id="tabS" aria-selected="false" aria-controls="paneS" type="button">Sauvegarde</button>
     <button class="close" id="panelClose" type="button">Fermer</button>
   </div>
+  <div class="pbody" id="paneZ" role="tabpanel" hidden>
+    <div class="zhead"><h2>Zones</h2><button type="button" class="zall" id="zAll">Toute la carte</button></div>
+    <p class="lead" style="margin-bottom:0">Touche une zone sur la mini-carte ou dans la liste : la carte s'y place et n'affiche plus que ses points.</p>
+    <div class="zmini" id="zMiniBox"><svg id="zMini" role="img" aria-label="Mini-carte des zones"></svg></div>
+    <h3 class="zg">Villes</h3><div id="zListV"></div>
+    <h3 class="zg">Campagne et nature</h3><div id="zListC"></div>
+    <p class="zfoot">Villes d'après la carte Open GTA 6 Map ; les zones de campagne suivent les comtés et leurs limites sont approximatives. Les pourcentages ne comptent pas les « Lieux ».</p>
+  </div>
   <div class="pbody" id="paneF" role="tabpanel">
+    <div class="zbanner" id="zBanner" hidden>Zone : <b id="zBName"></b><button type="button" id="zBClear">Toute la carte</button></div>
     <div class="big"><b id="gCount">0</b><span id="gTotal">sur 0 trouvés</span></div>
     <div class="meter"><i id="gBar"></i></div>
     <label class="tog"><input type="checkbox" id="hideFound"> Masquer ce que j'ai déjà trouvé</label>
@@ -581,6 +625,7 @@ setInterval(() => { if (document.visibilityState === 'visible' && cfg.main && !s
 /* ---------- map ---------- */
 let map, renderer, markers = [], onMap, layer, ring, radiusNow = 0, cur = -1;
 let enabled = new Set(), hideFound = false, rotOn = true, onlyCodes = false;
+let zones = [], zone = -1, zoneLayer = null, zoneRenderer = null, OV = [197, 201, 604, 776], zTot = [], zFound = [];
 const R = z => z < 1 ? 2.5 : z < 2 ? 3.5 : z < 3 ? 5 : z < 4 ? 9.5 : z < 5 ? 11.5 : 13;
 let HAVE_LIST = [];
 let glyphs = [];
@@ -617,7 +662,8 @@ const IconMarker = L.CircleMarker.extend({
     rd._fillStroke(ctx, this);
   }
 });
-function visible(i) { const r = locs[i]; return (onlyCodes ? !!(r[10] || r[11]) : enabled.has(r[1])) && !(hideFound && state.found.has(r[0])); }
+function visible(i) { const r = locs[i]; return (zone < 0 || r[12] === zone) && (onlyCodes ? !!(r[10] || r[11]) : enabled.has(r[1])) && !(hideFound && state.found.has(r[0])); }
+const zoneName = r => r[7] || (zones[r[12]] ? zones[r[12]].n : '');
 function styleOne(id) { const i = idIndex.get(id); if (i != null) markers[i].setStyle(styleFor(i)); }
 function styleFor(i) {
   return state.found.has(locs[i][0])
@@ -647,7 +693,7 @@ function initMap(towns) {
   map.attributionControl.setPrefix(false);
   if (matchMedia('(min-width:900px)').matches) L.control.zoom({ position: 'bottomleft', zoomInTitle: 'Zoomer', zoomOutTitle: 'Dézoomer' }).addTo(map);
   const HAVE = new Set('0/0_0 0/0_1 0/1_0 0/1_1 1/0_1 1/0_2 1/1_0 1/1_1 1/1_2 1/2_1 1/2_2 2/1_2 2/1_3 2/1_4 2/1_5 2/2_1 2/2_2 2/2_3 2/2_4 2/2_5 2/3_1 2/3_2 2/3_3 2/3_4 2/3_5 2/4_2 2/4_3 2/4_4 3/12_9 3/3_10 3/3_11 3/3_5 3/3_6 3/3_7 3/3_8 3/4_10 3/4_11 3/4_4 3/4_5 3/4_6 3/4_7 3/4_8 3/4_9 3/5_10 3/5_11 3/5_3 3/5_4 3/5_5 3/5_6 3/5_7 3/5_8 3/5_9 3/6_10 3/6_11 3/6_3 3/6_4 3/6_5 3/6_6 3/6_7 3/6_8 3/6_9 3/7_10 3/7_11 3/7_3 3/7_4 3/7_5 3/7_6 3/7_7 3/7_8 3/7_9 3/8_4 3/8_5 3/8_6 3/8_7 3/8_8 3/8_9 3/9_6 3/9_7 3/9_8 4/10_10 4/10_11 4/10_12 4/10_13 4/10_14 4/10_15 4/10_16 4/10_17 4/10_18 4/10_19 4/10_20 4/10_21 4/10_22 4/10_23 4/10_7 4/10_8 4/10_9 4/11_10 4/11_11 4/11_12 4/11_13 4/11_14 4/11_15 4/11_16 4/11_17 4/11_18 4/11_19 4/11_20 4/11_21 4/11_22 4/11_23 4/11_6 4/11_7 4/11_8 4/11_9 4/12_10 4/12_11 4/12_12 4/12_13 4/12_14 4/12_15 4/12_16 4/12_17 4/12_18 4/12_19 4/12_20 4/12_21 4/12_22 4/12_23 4/12_6 4/12_7 4/12_8 4/12_9 4/13_10 4/13_11 4/13_12 4/13_13 4/13_14 4/13_15 4/13_16 4/13_17 4/13_18 4/13_19 4/13_20 4/13_21 4/13_22 4/13_23 4/13_6 4/13_7 4/13_8 4/13_9 4/14_10 4/14_11 4/14_12 4/14_13 4/14_14 4/14_15 4/14_16 4/14_17 4/14_18 4/14_19 4/14_20 4/14_21 4/14_22 4/14_6 4/14_7 4/14_8 4/14_9 4/15_10 4/15_11 4/15_12 4/15_13 4/15_14 4/15_15 4/15_16 4/15_17 4/15_18 4/15_19 4/15_20 4/15_23 4/15_7 4/15_8 4/15_9 4/16_10 4/16_11 4/16_12 4/16_13 4/16_14 4/16_15 4/16_16 4/16_17 4/16_18 4/16_20 4/16_9 4/17_12 4/17_13 4/17_14 4/17_15 4/17_16 4/17_17 4/18_13 4/18_14 4/18_15 4/18_16 4/18_17 4/20_20 4/20_7 4/21_20 4/21_24 4/22_17 4/23_6 4/24_17 4/24_18 4/24_23 4/24_5 4/5_18 4/5_21 4/5_22 4/6_10 4/6_11 4/6_12 4/6_13 4/6_14 4/6_5 4/7_10 4/7_11 4/7_12 4/7_13 4/7_14 4/7_15 4/7_16 4/7_21 4/7_22 4/8_10 4/8_11 4/8_12 4/8_13 4/8_14 4/8_15 4/8_16 4/8_19 4/8_20 4/8_21 4/8_22 4/8_23 4/9_10 4/9_11 4/9_12 4/9_13 4/9_14 4/9_15 4/9_16 4/9_17 4/9_18 4/9_19 4/9_20 4/9_21 4/9_22 4/9_23 4/9_8 4/9_9 5/12_26 5/12_27 5/13_23 5/13_24 5/13_25 5/13_26 5/13_27 5/13_28 5/14_22 5/14_23 5/14_24 5/14_25 5/14_26 5/14_27 5/14_28 5/14_29 5/14_30 5/14_31 5/14_32 5/14_33 5/14_43 5/14_44 5/15_20 5/15_21 5/15_22 5/15_23 5/15_24 5/15_25 5/15_26 5/15_27 5/15_28 5/15_29 5/15_30 5/15_31 5/15_32 5/15_33 5/15_42 5/15_43 5/15_44 5/15_45 5/16_20 5/16_21 5/16_22 5/16_23 5/16_24 5/16_25 5/16_26 5/16_27 5/16_28 5/16_30 5/16_31 5/16_32 5/16_33 5/16_42 5/16_43 5/16_44 5/16_45 5/16_46 5/17_20 5/17_21 5/17_22 5/17_23 5/17_24 5/17_25 5/17_26 5/17_27 5/17_28 5/17_29 5/17_30 5/17_31 5/17_32 5/17_33 5/17_39 5/17_40 5/17_42 5/17_43 5/17_44 5/17_45 5/17_46 5/18_18 5/18_19 5/18_20 5/18_21 5/18_22 5/18_23 5/18_24 5/18_25 5/18_26 5/18_27 5/18_28 5/18_29 5/18_30 5/18_31 5/18_32 5/18_33 5/18_34 5/18_35 5/18_36 5/18_37 5/18_39 5/18_42 5/18_43 5/18_44 5/18_45 5/18_46 5/19_16 5/19_17 5/19_18 5/19_19 5/19_20 5/19_21 5/19_22 5/19_23 5/19_24 5/19_25 5/19_26 5/19_27 5/19_28 5/19_29 5/19_30 5/19_31 5/19_32 5/19_33 5/19_34 5/19_35 5/19_36 5/19_37 5/19_40 5/19_41 5/19_42 5/19_43 5/19_44 5/19_45 5/19_46 5/20_15 5/20_16 5/20_17 5/20_18 5/20_19 5/20_20 5/20_21 5/20_22 5/20_23 5/20_24 5/20_25 5/20_26 5/20_27 5/20_28 5/20_29 5/20_30 5/20_31 5/20_32 5/20_33 5/20_34 5/20_35 5/20_36 5/20_37 5/20_38 5/20_40 5/20_41 5/20_42 5/20_43 5/20_44 5/20_45 5/20_46 5/21_13 5/21_14 5/21_15 5/21_16 5/21_17 5/21_18 5/21_19 5/21_20 5/21_21 5/21_22 5/21_23 5/21_24 5/21_25 5/21_26 5/21_27 5/21_28 5/21_29 5/21_30 5/21_31 5/21_32 5/21_33 5/21_34 5/21_35 5/21_36 5/21_37 5/21_38 5/21_39 5/21_40 5/21_43 5/21_44 5/21_45 5/21_46 5/22_13 5/22_14 5/22_15 5/22_16 5/22_17 5/22_18 5/22_19 5/22_20 5/22_21 5/22_22 5/22_23 5/22_24 5/22_25 5/22_26 5/22_27 5/22_28 5/22_29 5/22_30 5/22_31 5/22_32 5/22_33 5/22_34 5/22_35 5/22_36 5/22_37 5/22_38 5/22_39 5/22_40 5/22_41 5/22_44 5/22_45 5/22_46 5/23_13 5/23_14 5/23_15 5/23_16 5/23_17 5/23_18 5/23_19 5/23_20 5/23_21 5/23_22 5/23_23 5/23_24 5/23_25 5/23_26 5/23_27 5/23_28 5/23_29 5/23_30 5/23_31 5/23_32 5/23_33 5/23_34 5/23_35 5/23_36 5/23_37 5/23_38 5/23_39 5/23_40 5/23_41 5/23_42 5/23_44 5/23_45 5/23_46 5/24_13 5/24_14 5/24_15 5/24_16 5/24_17 5/24_18 5/24_19 5/24_20 5/24_21 5/24_22 5/24_23 5/24_24 5/24_25 5/24_26 5/24_27 5/24_28 5/24_29 5/24_30 5/24_31 5/24_32 5/24_33 5/24_34 5/24_35 5/24_36 5/24_37 5/24_38 5/24_39 5/24_40 5/24_41 5/24_42 5/24_43 5/24_44 5/24_45 5/24_46 5/24_47 5/25_13 5/25_14 5/25_15 5/25_16 5/25_17 5/25_18 5/25_19 5/25_20 5/25_21 5/25_22 5/25_23 5/25_24 5/25_25 5/25_26 5/25_27 5/25_28 5/25_29 5/25_30 5/25_31 5/25_32 5/25_33 5/25_34 5/25_35 5/25_36 5/25_37 5/25_38 5/25_39 5/25_40 5/25_41 5/25_42 5/25_43 5/25_44 5/25_45 5/25_46 5/25_47 5/25_48 5/26_13 5/26_14 5/26_15 5/26_16 5/26_17 5/26_18 5/26_19 5/26_20 5/26_21 5/26_22 5/26_23 5/26_24 5/26_25 5/26_26 5/26_27 5/26_28 5/26_29 5/26_30 5/26_31 5/26_32 5/26_33 5/26_34 5/26_35 5/26_36 5/26_37 5/26_38 5/26_39 5/26_40 5/26_41 5/26_42 5/26_43 5/26_44 5/26_45 5/26_46 5/27_13 5/27_14 5/27_15 5/27_16 5/27_17 5/27_18 5/27_19 5/27_20 5/27_21 5/27_22 5/27_23 5/27_24 5/27_25 5/27_26 5/27_27 5/27_28 5/27_29 5/27_30 5/27_31 5/27_32 5/27_33 5/27_34 5/27_35 5/27_36 5/27_37 5/27_38 5/27_39 5/27_40 5/27_41 5/27_42 5/27_43 5/27_44 5/27_45 5/28_13 5/28_14 5/28_15 5/28_16 5/28_17 5/28_18 5/28_19 5/28_20 5/28_21 5/28_22 5/28_23 5/28_24 5/28_25 5/28_26 5/28_27 5/28_28 5/28_29 5/28_30 5/28_31 5/28_32 5/28_33 5/28_34 5/28_35 5/28_36 5/28_37 5/28_38 5/28_39 5/28_40 5/28_41 5/28_42 5/28_43 5/28_44 5/29_13 5/29_14 5/29_15 5/29_16 5/29_17 5/29_18 5/29_19 5/29_20 5/29_21 5/29_22 5/29_23 5/29_24 5/29_25 5/29_26 5/29_27 5/29_28 5/29_29 5/29_30 5/29_31 5/29_32 5/29_33 5/29_34 5/29_35 5/29_36 5/29_37 5/29_38 5/29_39 5/29_40 5/29_41 5/29_42 5/29_43 5/29_46 5/29_47 5/30_15 5/30_16 5/30_17 5/30_18 5/30_19 5/30_20 5/30_21 5/30_22 5/30_23 5/30_24 5/30_25 5/30_26 5/30_27 5/30_28 5/30_29 5/30_30 5/30_31 5/30_32 5/30_33 5/30_34 5/30_35 5/30_36 5/30_37 5/30_38 5/30_39 5/30_40 5/30_41 5/31_18 5/31_19 5/31_20 5/31_21 5/31_22 5/31_23 5/31_24 5/31_25 5/31_26 5/31_27 5/31_28 5/31_29 5/31_30 5/31_31 5/31_32 5/31_33 5/31_34 5/31_35 5/31_36 5/31_37 5/31_38 5/32_18 5/32_19 5/32_20 5/32_21 5/32_22 5/32_23 5/32_24 5/32_25 5/32_26 5/32_27 5/32_28 5/32_29 5/32_30 5/32_31 5/32_32 5/32_33 5/32_34 5/32_35 5/32_36 5/32_37 5/33_18 5/33_19 5/33_20 5/33_21 5/33_22 5/33_23 5/33_24 5/33_25 5/33_26 5/33_27 5/33_28 5/33_29 5/33_30 5/33_31 5/33_32 5/33_33 5/33_34 5/33_35 5/33_36 5/34_24 5/34_25 5/34_26 5/34_27 5/34_28 5/34_29 5/34_30 5/34_31 5/34_32 5/34_33 5/34_34 5/34_35 5/34_36 5/35_25 5/35_26 5/35_27 5/35_28 5/35_29 5/35_30 5/35_31 5/35_32 5/35_33 5/35_34 5/35_35 5/36_27 5/36_28 5/36_29 5/36_30 5/36_31 5/36_32 5/36_33 5/36_34 5/36_35 5/37_29 5/37_30 5/37_34 5/37_35'.split(' '));
-  HAVE_LIST = [...HAVE];
+  HAVE_LIST = [...HAVE, 'ov'];
   const Tiles = L.TileLayer.extend({ createTile(c, done) {
     if (HAVE.has(c.z + '/' + c.x + '_' + c.y)) return L.TileLayer.prototype.createTile.call(this, c, done);
     const d = document.createElement('div'); setTimeout(() => done(null, d), 0); return d;
@@ -687,13 +733,18 @@ function initMap(towns) {
     } });
     new RotTiles({ tileSize: 512, minZoom: -1, maxZoom: 7, attribution: ATTR }).addTo(map);
   }
+  map.createPane('zonePane').style.zIndex = 350;
+  zoneRenderer = L.svg({ pane: 'zonePane', padding: 0.5 });
   renderer = L.canvas({ padding: 0.4, tolerance: 8 });
   layer = L.layerGroup().addTo(map);
   onMap = new Uint8Array(locs.length);
   radiusNow = R(0);
   markers = locs.map((r, i) => { const m = new IconMarker([-r[3], r[2]], Object.assign({ renderer, radius: radiusNow, bubblingMouseEvents: false, ci: r[1], code: r[10] || '' }, styleFor(i))); m.on('click', () => openCard(i, false)); return m; });
   ring = L.circleMarker([0, 0], { renderer, radius: 14, color: '#fff', weight: 3, fill: false, interactive: false });
-  towns.forEach(t => L.marker([-t.y, t.x], { interactive: false, keyboard: false, icon: L.divIcon({ className: '', html: '<div class="town">' + esc(t.n) + '</div>', iconSize: [0, 0] }) }).addTo(map));
+  towns.forEach(t => {
+    const m = L.marker([-t.y, t.x], { interactive: t.i != null, keyboard: false, icon: L.divIcon({ className: '', html: '<div class="town' + (t.c ? ' country' : '') + '">' + esc(t.n) + '</div>', iconSize: [0, 0] }) }).addTo(map);
+    if (t.i != null) m.on('click', () => { if (map.getZoom() < 1.5) pickZone(t.i); });
+  });
   const ui = lsGet(LS_UI);
   if (ui && ui.view && isFinite(ui.view.z)) map.setView([ui.view.lat, ui.view.lng], ui.view.z);
   else {
@@ -709,19 +760,25 @@ function initMap(towns) {
 }
 function saveUi() {
   const c = map ? map.getCenter() : null;
-  lsSet(LS_UI, { off: cats.filter((x, i) => !enabled.has(i)).map(x => x.k), hide: hideFound, rot: rotOn, codes: onlyCodes, view: c ? { lat: c.lat, lng: c.lng, z: map.getZoom() } : null });
+  lsSet(LS_UI, { off: cats.filter((x, i) => !enabled.has(i)).map(x => x.k), hide: hideFound, rot: rotOn, codes: onlyCodes, zone: zone >= 0 && zones[zone] ? zones[zone].n : '', view: c ? { lat: c.lat, lng: c.lng, z: map.getZoom() } : null });
 }
 
 /* ---------- counts & panel ---------- */
 let catTotal = [], catFound = [];
 function renderCounts() {
-  catFound = cats.map(() => 0);
-  for (const r of locs) if (state.found.has(r[0])) catFound[r[1]]++;
+  catFound = cats.map(() => 0); catTotal = cats.map(() => 0);
+  zTot = zones.map(() => 0); zFound = zones.map(() => 0);
+  for (const r of locs) {
+    const on = state.found.has(r[0]);
+    if (zones[r[12]] && cats[r[1]].g !== 'lieux') { zTot[r[12]]++; if (on) zFound[r[12]]++; }
+    if (zone >= 0 && r[12] !== zone) continue;
+    catTotal[r[1]]++; if (on) catFound[r[1]]++;
+  }
   let f = 0, t = 0;
   cats.forEach((c, i) => { if (c.g !== 'lieux') { f += catFound[i]; t += catTotal[i]; } });
   const pct = !t ? 0 : f >= t ? 100 : Math.min(99.9, Math.round(f / t * 1000) / 10);
   $('#gCount').textContent = fmt(f);
-  $('#gTotal').textContent = 'sur ' + fmt(t) + ' à trouver · ' + pct.toLocaleString('fr-FR') + ' %';
+  $('#gTotal').textContent = 'sur ' + fmt(t) + ' à trouver' + (zone >= 0 ? ' dans ' + zones[zone].n : '') + ' · ' + pct.toLocaleString('fr-FR') + ' %';
   $('#gBar').style.width = pct + '%';
   $('#chipPct').textContent = pct.toLocaleString('fr-FR') + ' %';
   $('#chipBar').style.width = pct + '%';
@@ -735,6 +792,7 @@ function renderCounts() {
     let gf = 0, gt = 0; cats.forEach((c, i) => { if (c.g === g.k) { gf += catFound[i]; gt += catTotal[i]; } });
     const el = document.getElementById('gc-' + g.k); if (el) el.textContent = fmt(gf) + ' / ' + fmt(gt);
   });
+  renderZoneUi();
 }
 function buildPanel() {
   $('#groups').innerHTML = groups.map(g => {
@@ -768,11 +826,11 @@ const desk = () => matchMedia('(min-width:900px)').matches;
 function openPanel(tab) { selectTab(tab); $('#panel').classList.add('open'); closeCard(); }
 function closePanel() { $('#panel').classList.remove('open'); }
 function selectTab(tab) {
-  const s = tab === 'save';
-  $('#tabF').setAttribute('aria-selected', String(!s)); $('#tabS').setAttribute('aria-selected', String(s));
-  $('#paneF').hidden = s; $('#paneS').hidden = !s;
-  if (s) { renderSave(); loadHistory(); renderInstall(); renderOffline(); }
+  const t = { zones: ['#tabZ', '#paneZ'], filters: ['#tabF', '#paneF'], save: ['#tabS', '#paneS'] };
+  for (const k in t) { $(t[k][0]).setAttribute('aria-selected', String(k === tab)); $(t[k][1]).hidden = k !== tab; }
+  if (tab === 'save') { renderSave(); loadHistory(); renderInstall(); renderOffline(); }
 }
+$('#tabZ').onclick = () => selectTab('zones');
 $('#tabF').onclick = () => selectTab('filters');
 $('#tabS').onclick = () => selectTab('save');
 $('#panelClose').onclick = closePanel;
@@ -959,7 +1017,7 @@ function fillCard(i) {
   $('#cSw').innerHTML = badge(c);
   $('#cCat').textContent = c.n + (r[9] ? ' · ' + r[9] : '');
   $('#cName').textContent = r[4];
-  $('#cPlace').textContent = r[7] || 'Leonida';
+  $('#cPlace').textContent = zoneName(r) || 'Leonida';
   const cc = $('#cCode'), hasCode = !!(r[10] || r[11]);
   cc.hidden = !hasCode;
   if (hasCode) { cc.classList.toggle('nocode', !r[10]); $('#cCodeV').textContent = r[10] || (/^Pas besoin/.test(r[11]) ? 'Aucun' : 'À trouver'); $('#cCodeD').textContent = r[11] || ''; }
@@ -997,10 +1055,85 @@ function flushNote() {
 }
 $('#cNext').onclick = () => {
   if (cur < 0) return; const r = locs[cur]; let best = -1, bd = Infinity;
-  locs.forEach((o, j) => { if (j === cur || o[1] !== r[1] || state.found.has(o[0])) return; const d = (o[2] - r[2]) ** 2 + (o[3] - r[3]) ** 2; if (d < bd) { bd = d; best = j; } });
-  if (best < 0) { toast('Plus rien à trouver dans cette catégorie, bravo !'); return; }
+  locs.forEach((o, j) => { if (j === cur || o[1] !== r[1] || state.found.has(o[0]) || (zone >= 0 && o[12] !== zone)) return; const d = (o[2] - r[2]) ** 2 + (o[3] - r[3]) ** 2; if (d < bd) { bd = d; best = j; } });
+  if (best < 0) { toast(zone >= 0 ? 'Plus rien de cette catégorie à trouver dans ' + zones[zone].n + ', bravo !' : 'Plus rien à trouver dans cette catégorie, bravo !'); return; }
   openCard(best, true);
 };
+
+/* ---------- zones ---------- */
+function rotPt(x, y) { const a = rotOn ? 20 * Math.PI / 180 : 0, dx = x - 404, dy = y - 494; return [404 + dx * Math.cos(a) - dy * Math.sin(a), 494 + dx * Math.sin(a) + dy * Math.cos(a)]; }
+const zoneRings = z => z.p.map(p => { const a = []; for (let i = 0; i < p.length; i += 2) a.push([p[i], p[i + 1]]); return a; });
+function buildZones() {
+  $('#zChip').hidden = !zones.length; $('#tabZ').hidden = !zones.length;
+  if (!zones.length) return;
+  let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
+  zones.forEach(z => zoneRings(z).forEach(rg => rg.forEach(([x, y]) => { const [X, Y] = rotPt(x, y); bx0 = Math.min(bx0, X); by0 = Math.min(by0, Y); bx1 = Math.max(bx1, X); by1 = Math.max(by1, Y); })));
+  const m = 8; bx0 -= m; by0 -= m; bx1 += m; by1 += m;
+  const svg = $('#zMini'), f = v => v.toFixed(1);
+  svg.setAttribute('viewBox', [bx0, by0, bx1 - bx0, by1 - by0].map(f).join(' '));
+  $('#zMiniBox').style.setProperty('--ar', f(bx1 - bx0) + '/' + f(by1 - by0));
+  let h = '<g transform="rotate(' + (rotOn ? 20 : 0) + ' 404 494)"><image href="t/ov.webp" x="' + OV[0] + '" y="' + OV[1] + '" width="' + (OV[2] - OV[0]) + '" height="' + (OV[3] - OV[1]) + '" preserveAspectRatio="none" opacity=".9"/>';
+  zones.forEach((z, i) => { h += '<path class="zp" data-z="' + i + '" style="--zc:' + z.c + '" d="' + zoneRings(z).map(rg => 'M' + rg.map(p => p.join(' ')).join('L') + 'Z').join('') + '"/>'; });
+  h += '</g>';
+  zones.forEach((z, i) => { const [X, Y] = rotPt(z.x, z.y); h += '<text data-z="' + i + '" x="' + f(X) + '" y="' + f(Y) + '">' + esc(z.s || z.n) + '</text>'; });
+  svg.innerHTML = h;
+  const row = (z, i) => '<button type="button" class="zrow" data-z="' + i + '"><i style="background:' + z.c + '"></i><span class="zn">' + esc(z.n) + (z.h ? '<small>' + esc(z.h) + '</small>' : '') + '</span><span class="zc" id="zc' + i + '"></span><span class="zl"><i id="zl' + i + '"></i></span></button>';
+  const list = g => zones.map((z, i) => [z, i]).filter(([z]) => z.g === g).sort((a, b) => a[0].n.localeCompare(b[0].n, 'fr')).map(([z, i]) => row(z, i)).join('');
+  $('#zListV').innerHTML = list('v'); $('#zListC').innerHTML = list('c');
+}
+function renderZoneUi() {
+  if (!zones.length) return;
+  const on = zone >= 0, z = zones[zone];
+  $('#zChip').classList.toggle('on', on); $('#zTxt').textContent = on ? (z.s || z.n) : 'Zones'; $('#zClear').hidden = !on;
+  $('#zBanner').hidden = !on; if (on) $('#zBName').textContent = z.n;
+  $('#zAll').classList.toggle('on', !on);
+  $('#zMiniBox').classList.toggle('sel', on);
+  document.querySelectorAll('#zMini [data-z]').forEach(el => el.classList.toggle('on', +el.dataset.z === zone));
+  zones.forEach((x, i) => {
+    const c = document.getElementById('zc' + i); if (!c) return;
+    c.textContent = fmt(zFound[i] || 0) + '/' + fmt(zTot[i] || 0);
+    document.getElementById('zl' + i).style.width = (zTot[i] ? zFound[i] / zTot[i] * 100 : 0) + '%';
+    const r = c.parentNode; r.classList.toggle('on', i === zone); r.classList.toggle('done', zTot[i] > 0 && zFound[i] === zTot[i]);
+  });
+}
+function drawZone() {
+  if (zoneLayer) { map.removeLayer(zoneLayer); zoneLayer = null; }
+  if (zone < 0 || !zones[zone]) return;
+  const z = zones[zone], rings = zoneRings(z).map(rg => rg.map(([x, y]) => [-y, x]));
+  const outer = [[-1700, -700], [-1700, 1700], [700, 1700], [700, -700]];
+  zoneLayer = L.layerGroup([
+    L.polygon([outer, ...rings], { renderer: zoneRenderer, stroke: false, fillColor: '#03050d', fillOpacity: .55, interactive: false }),
+    L.polygon(rings, { renderer: zoneRenderer, fill: false, color: z.c, weight: 7, opacity: .5, interactive: false }),
+    L.polygon(rings, { renderer: zoneRenderer, fill: false, color: '#fff', weight: 2, opacity: .95, interactive: false })
+  ]).addTo(map);
+}
+function fitPts(pts, maxZ) {
+  const P = pts.map(([x, y]) => map.project([-y, x], 0)), b = L.bounds(P), sz = map.getSize();
+  const top = $('.bar').getBoundingClientRect().bottom + 8, left = desk() ? $('#panel').getBoundingClientRect().right + 12 : 10;
+  const aw = Math.max(80, sz.x - left - 10), ah = Math.max(80, sz.y - top - 14);
+  let zz = Math.log2(Math.min(aw / Math.max(1, b.max.x - b.min.x), ah / Math.max(1, b.max.y - b.min.y)));
+  zz = Math.max(-1, Math.min(maxZ, Math.floor(zz * 2) / 2));
+  const s = Math.pow(2, zz), off = L.point(left + aw / 2 - sz.x / 2, top + ah / 2 - sz.y / 2).divideBy(s);
+  map.flyTo(map.unproject(b.getCenter().subtract(off), 0), zz, { duration: .7 });
+}
+function setZone(i, fly) {
+  zone = zones[i] ? i : -1;
+  if (cur >= 0 && zone >= 0 && locs[cur][12] !== zone) closeCard();
+  drawZone(); refreshLayer(); renderCounts(); saveUi();
+  if (!fly) return;
+  if (zone >= 0) fitPts(zoneRings(zones[zone]).flat(), 4.5);
+  else fitPts([[OV[0] + 12, OV[1] + 12], [OV[2] - 12, OV[1] + 12], [OV[0] + 12, OV[3] - 12], [OV[2] - 12, OV[3] - 12]], 2);
+}
+function pickZone(i) {
+  setZone(i === zone ? -1 : i, true);
+  if (!desk()) closePanel();
+  if (zone >= 0) { const f = zFound[zone] || 0; toast(zones[zone].n + ' : ' + fmt(f) + (f > 1 ? ' trouvés' : ' trouvé') + ' sur ' + fmt(zTot[zone] || 0)); }
+}
+$('#zBtn').onclick = () => openPanel('zones');
+$('#zClear').onclick = () => setZone(-1, true);
+$('#zAll').onclick = () => { setZone(-1, true); if (!desk()) closePanel(); };
+$('#zBClear').onclick = () => setZone(-1, true);
+$('#paneZ').addEventListener('click', e => { const el = e.target.closest('[data-z]'); if (el) pickZone(+el.dataset.z); });
 
 /* ---------- search ---------- */
 let sIndex = [], sTmr = null;
@@ -1013,10 +1146,10 @@ function runSearch() {
   if (!words.length) { hideResults(); return; }
   const hits = [];
   for (let i = 0; i < sIndex.length && hits.length < 40; i++) if (words.every(w => sIndex[i].includes(w))) hits.push(i);
-  box.innerHTML = hits.length ? hits.map(i => { const r = locs[i], c = cats[r[1]]; return '<button type="button" data-r="' + i + '">' + badge(c, 'sm') + '<span>' + esc(r[4]) + '<small>' + esc(c.n) + (r[7] ? ' · ' + esc(r[7]) : '') + '</small></span><span>' + (state.found.has(r[0]) ? '✓' : '') + '</span></button>'; }).join('') : '<div class="none">Aucun résultat.</div>';
+  box.innerHTML = hits.length ? hits.map(i => { const r = locs[i], c = cats[r[1]]; return '<button type="button" data-r="' + i + '">' + badge(c, 'sm') + '<span>' + esc(r[4]) + '<small>' + esc(c.n) + (zoneName(r) ? ' · ' + esc(zoneName(r)) : '') + '</small></span><span>' + (state.found.has(r[0]) ? '✓' : '') + '</span></button>'; }).join('') : '<div class="none">Aucun résultat.</div>';
   box.hidden = false;
 }
-$('#results').addEventListener('click', e => { const b = e.target.closest('button[data-r]'); if (!b) return; const i = +b.dataset.r; $('#q').blur(); if (!enabled.has(locs[i][1])) { enabled.add(locs[i][1]); filtersChanged(); } openCard(i, true); });
+$('#results').addEventListener('click', e => { const b = e.target.closest('button[data-r]'); if (!b) return; const i = +b.dataset.r; $('#q').blur(); if (zone >= 0 && locs[i][12] !== zone) { setZone(-1, false); toast('Zone retirée pour afficher ce point.'); } if (!enabled.has(locs[i][1])) { enabled.add(locs[i][1]); filtersChanged(); } openCard(i, true); });
 
 /* ---------- dialog & toast ---------- */
 function ask(title, text, buttons) {
@@ -1090,16 +1223,17 @@ loadLocal(); renderSave();
 fetch('data.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(async d => {
   cats = d.cats; groups = d.groups; locs = d.locs;
   locs.forEach((r, i) => idIndex.set(r[0], i));
-  catTotal = cats.map(c => c.t);
-  sIndex = locs.map(r => norm(r[4] + ' ' + cats[r[1]].n + ' ' + (r[7] || '') + ' ' + (r[9] || '') + (r[10] || r[11] ? ' code ' + (r[10] || '') + ' ' + (r[11] || '') : '')));
+  zones = Array.isArray(d.zones) ? d.zones : []; if (Array.isArray(d.ov)) OV = d.ov;
+  sIndex = locs.map(r => norm(r[4] + ' ' + cats[r[1]].n + ' ' + zoneName(r) + ' ' + (r[9] || '') + (r[10] || r[11] ? ' code ' + (r[10] || '') + ' ' + (r[11] || '') : '')));
   $('#built').textContent = new Date(d.built).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
   const ui = lsGet(LS_UI);
   const off = new Set(ui && Array.isArray(ui.off) ? ui.off : cats.filter(c => c.g === 'lieux').map(c => c.k));
   enabled = new Set(cats.map((c, i) => i).filter(i => !off.has(cats[i].k)));
   hideFound = !!(ui && ui.hide); onlyCodes = !!(ui && ui.codes);
+  zone = ui && ui.zone ? zones.findIndex(z => z.n === ui.zone) : -1;
   await prepGlyphs();
-  initMap(d.towns || []);
-  buildPanel(); refreshLayer(); renderCounts(); renderSave();
+  initMap(zones.length ? zones.map((z, i) => ({ n: z.s || z.n, x: z.x, y: z.y, i, c: z.g === 'c' })) : (d.towns || []));
+  buildPanel(); buildZones(); drawZone(); refreshLayer(); renderCounts(); renderSave();
   if (desk()) selectTab('filters');
   $('#loader').hidden = true;
   renderInstall(); renderOffline(); loadHistory();

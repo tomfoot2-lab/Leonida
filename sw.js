@@ -1,7 +1,7 @@
 // Leonida — carte FR : fonctionnement hors ligne.
 // Coquille et données : réseau d'abord (pour recevoir les mises à jour), cache en secours.
 // Morceaux de carte, polices et photos déjà vues : cache d'abord. La synchro GitHub n'est jamais mise en cache.
-const VERSION = 'v2';
+const VERSION = 'v3';
 const SHELL = 'leonida-shell-' + VERSION;
 const DATA = 'leonida-data';
 const TILES = 'leonida-tiles';
